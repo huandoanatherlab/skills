@@ -1,6 +1,6 @@
 ---
 name: build-plan
-description: Build an approved multi-slice plan as coordinator, with builders from one model family, reviewers from another, triage, a commit per slice and a live check; use to execute, implement or resume a written plan, not to write one.
+description: Build an approved multi-slice plan as coordinator, with builders from one model family, reviewers from another, triage, per-slice commits and a live check; use to execute, implement or resume a written plan, not to write one.
 ---
 
 # Build Plan

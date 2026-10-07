@@ -21,7 +21,7 @@ writing-prd → writing-tdd → writing-plans ──plan-review──▶ build-p
 | --- | --- |
 | `writing-plans` | Plan with slice IDs, file ownership, live proof level and risk per slice |
 | `plan-review` | Lens for plans |
-| `build-plan` | Coordinator: builders from one model family, reviewers from the other, triage, a commit per slice, live check |
+| `build-plan` | Coordinator: builders from one model family, reviewers from the other, triage, per-slice commits, live check |
 | `agent-run` | Script to run Claude or Codex as builder or reviewer, resumable by session |
 | `thermal-review-loop` | Review, triage, fix, same-reviewer approval; a fresh reviewer only for risky targets and the final diff |
 | `code-quality-review` | Lens for code |
