@@ -21,7 +21,7 @@ agent-run status [<dir>]
 - Every call prints the turn's report path: `turn-N.md` (final message), with `turn-N.log` and `turn-N.exit` beside it.
 - Exit code is the agent's, or `3` when a reviewer's report does not end with a verdict line. Resume that reviewer and ask for the verdict before using the report.
 
-Path: `<skill dir>/scripts/agent-run`. The script runs in the foreground; background it the way the host allows (see `build-plan` host notes).
+Path: `<skill dir>/scripts/agent-run`. The script runs in the foreground; background it the way the host allows (see `writing-plans` references/hosts.md).
 
 ## Roles and permissions
 

@@ -5,7 +5,7 @@
 set -eu
 ROOT=$(cd "$(dirname "$0")" && pwd)
 HOSTS=("$HOME/.claude/skills" "$HOME/.codex/skills")
-REPLACED=(execute-plan-with-subagents executing-plans ask-cli-agents)
+REPLACED=(execute-plan-with-subagents executing-plans ask-cli-agents build-plan)
 BACKUP=$HOME/.skills-backup/$(date +%Y%m%d-%H%M%S)
 DRY=; [ "${1:-}" = --dry-run ] && DRY=echo
 

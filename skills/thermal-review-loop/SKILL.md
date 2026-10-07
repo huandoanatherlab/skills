@@ -17,7 +17,7 @@ Define before dispatching review:
 - fix owner
 - verification evidence already run
 - known unrelated dirt or failures
-- risk: `normal`, or `risky` when the target touches migrations, persistence, permissions, security or a public contract
+- risk: `normal` or `risky` (definition in `writing-plans` references/plan-contract.md)
 
 ## Reviewer
 

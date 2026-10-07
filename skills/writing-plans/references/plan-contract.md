@@ -13,8 +13,6 @@ Use this contract for plans that will be executed by an agent or handed to anoth
 
 **Tech Stack:** [Only relevant systems and tools]
 
-**Execution:** `build-plan` | human checkpoint
-
 ---
 ```
 
@@ -32,7 +30,6 @@ Include only applicable sections, but never omit information an implementer woul
 - Final Verification
 - Review Status
 - Risks / Open Questions
-- Execution Handoff
 
 ## Slice
 
@@ -66,7 +63,22 @@ Include only applicable sections, but never omit information an implementer woul
 - Observable behavior, test evidence, diagnostic result, deletion proof, or architecture proof.
 ```
 
-Use stable slice IDs so execution reports, reviews, and deviations can refer to the same unit of work.
+Use stable slice IDs so build reports, reviews, and deviations can refer to the same unit of work.
+
+### Live proof levels
+
+Decided in the plan so review can challenge it. Name behaviors, not tooling; how to run the app lives in `.agents/build.md`.
+
+| Level | Use for | Evidence |
+| --- | --- | --- |
+| `none` | Pure library or internal logic | The slice's focused tests |
+| `smoke` | Internal change; the app must still run | App starts, health check passes, one main flow works |
+| `story` | User-visible behavior | One row per named behavior, driven like a real user, with screenshot or output |
+| `suite` | The project's E2E suite covers it | The named specs pass |
+
+### Risk
+
+`risky` when the slice touches migrations, persistence, permissions, security or a public contract; otherwise `normal`. A risky slice needs a fresh reviewer's first-pass approval (see `thermal-review-loop`).
 
 ## Review Status
 
