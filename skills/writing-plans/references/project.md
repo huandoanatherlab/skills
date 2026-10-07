@@ -42,7 +42,7 @@ When `Live check` is missing, stop at the first source that answers:
 
 1. A project skill that runs the app (`dev-lane`, `run`, `setup-dev-server`).
 2. Repo signals: `dev`/`start`/`e2e` scripts, `playwright.config.*`, `Makefile`, `docker-compose*`, README.
-3. By project type: **web** start the dev server and drive a browser; **API** start it and `curl`; **CLI** build and run it in a temp dir; **library** a short example script in `build/`.
+3. By project type: **web** start the dev server and drive a browser; **API** start it and `curl`; **CLI** build and run it in a temp dir; **library** a short example script in `build/`; **desktop or mobile** build and launch the dev build, and drive it only if the host has a tool for it.
 
 Then propose the `Live check` section and write it once the user approves.
 
@@ -50,6 +50,7 @@ Then propose the `Live check` section and write it once the user approves.
 
 - Write `build/live-plan.md`: one row per behavior from the plan's `story` slices (steps, expected result, slice).
 - Read-only rows in parallel, state-changing rows serially. BEFORE and AFTER captures for bug fixes.
+- Fix what fails and re-run those rows before the acceptance audit.
 - Evidence in `build/evidence/`. Label results from seeded or synthetic data.
 - Test accounts and data only; never post to real external services.
 - Cannot start or drive the app: mark the rows **not verified** with the exact blocker. `verify-plan-delivery` then returns `DELIVERY INCOMPLETE` unless the user waives it in chat. Never write E2E code the plan did not ask for just to get a pass.

@@ -17,7 +17,7 @@ Read enough code and primary sources to prove: where the behavior lives now, who
 
 For ports and migrations, classify source material as **copy/adapt**, **reference only**, or **reject**.
 
-For risky work (permissions, persistence, migrations, ports, large refactors) also record: source of truth and contract boundary, runtime versus persisted state, permission path, lifecycle and teardown owner, compatibility policy, non-goals, and what must be deleted rather than wrapped. Large-file refactors need before/after `wc -l` and a named responsibility removed from the old owner.
+For changes to permissions, persistence, migrations, ports or large files, also record: source of truth and contract boundary, runtime versus persisted state, permission path, lifecycle and teardown owner, compatibility policy, non-goals, and what must be deleted rather than wrapped. Large-file refactors need before/after `wc -l` and a named responsibility removed from the old owner.
 
 ## Write it
 
@@ -33,7 +33,7 @@ Then show the user: plan path, review status, open decisions. Continue to Build 
 
 You are the **coordinator**. Builders write and commit code, reviewers check it, you triage, verify and report. You never review your own code. Run state lives in `build/` so any session on Claude or Codex can resume it.
 
-Read [references/hosts.md](references/hosts.md) for your host. Builders and reviewers run through `agent-run` (on `PATH`; skill `agent-run`).
+Read [references/hosts.md](references/hosts.md) for your host. Builders and reviewers run through `agent-run` (on `PATH` after install; otherwise `../agent-run/scripts/agent-run` from this skill's directory).
 
 ## Start
 
@@ -42,7 +42,8 @@ Requires a plan with Review Status `approved` and no open architecture decision.
 1. Show one table: plan, branch and HEAD, worktree, dirty files, environment, roles with models, slice order and parallel groups. Wait for "go" unless already given.
 2. Re-check the plan's file and line references against HEAD.
 3. In `build/`, write `TRACKER.md`, `QUESTIONS.md`, `briefs/COMMON.md` and `briefs/REVIEW.md` from [references/templates.md](references/templates.md), filled with the project's gates and fences.
-4. Start the environment the live checks need, if any.
+4. Create one worktree per parallel group (`git worktree add`, next to the repo unless `.agents/build.md` says otherwise); sequential slices share one.
+5. Start the environment the live checks need, if any.
 
 Choose a mode per slice:
 
@@ -54,8 +55,8 @@ The roles in `.agents/build.md` override these defaults; the user overrides both
 
 ## Each slice
 
-1. **Build.** Write `build/runs/<slice>/prompt.md` ("Read briefs/COMMON.md first", slice ID, named tests, extra fences), then `agent-run start build/runs/<slice> <family> builder --cwd <worktree>` in the background. Write the next slice's prompt while it runs.
-2. **Check the claim.** Read the whole diff and re-run the slice's named tests and gates. A builder's report is a claim, not evidence. A failure is pre-existing only if the same test fails on the base commit.
+1. **Build.** Write `build/runs/<slice>/prompt.md` ("Read briefs/COMMON.md first", slice ID, named tests, extra fences), then `agent-run start build/runs/<slice> <family> builder --cwd <worktree>` in the background; confirm `agent-run status` shows it `running`. Write the next slice's prompt while it runs.
+2. **Check the claim.** Read the whole diff and re-run the slice's named tests and gates. A builder's report is a claim, not evidence. If the builder exited without committing (usually a forbidden background job), resume it with the rule restated. A failure is pre-existing only if the same test fails on the base commit.
 3. **Review** with `thermal-review-loop`: render `briefs/REVIEW.md` into `build/runs/<slice>-review/prompt.md`, run `agent-run start build/runs/<slice>-review <other family> reviewer --cwd <worktree>`, write `triage-N.md`, send accepted fixes to the same builder with `agent-run resume`, and send every finding with its fix or rejection back to the same reviewer.
 4. **Live proof** at the slice's level ([references/project.md](references/project.md)), between builds, never while a builder edits a watched dev server.
 5. **Record** commits, verdict and evidence in `TRACKER.md`. Then launch the next slice at once; answering a question mid-run never ends the turn.
@@ -77,9 +78,3 @@ Run slices in parallel only when files, state and contracts do not overlap: one 
 ## Unattended
 
 When the user is away and said to continue: fix bugs, log clear-value design changes, cut machinery, and put everything else in `QUESTIONS.md` with your recommendation. Check-ins are one line: what runs, which model, how long, where the evidence is (`agent-run status build/runs`). Before your context runs out, update the top of `TRACKER.md` (current step, running processes, granted authority) and hand off to a fresh session.
-
-## Gotchas
-
-- Builders that start background jobs exit early; the brief forbids them. If a builder exits without committing, resume it with the rule restated.
-- Builders never migrate or run whole suites against a live environment's database, touch other worktrees, or post to real external services.
-- Confirm a background agent is `running` in `agent-run status` before saying it is.
