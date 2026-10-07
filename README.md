@@ -12,20 +12,16 @@ Plan, build and review skills shared by Claude Code and Codex. One source, linke
 ## Flow
 
 ```
-writing-prd → writing-tdd → writing-plans: plan ──plan-review──▶ build ──code-quality-review──▶ verify-plan-delivery
-                                              (thermal-review-loop)     │  (thermal-review-loop)
-                                                                        └─ agent-run: Claude ⇄ Codex
+writing-specs (optional) → writing-plans: plan ─review(plan)→ build ─review(code)→ review(delivery)
+                                                                 └─ agent-run: Claude ⇄ Codex
 ```
 
 | Skill | Job |
 | --- | --- |
-| `writing-plans` | Plan (slices, live proof, risk), review it, then build it as coordinator: builders from one model family, reviewers from the other |
-| `plan-review` | Lens for plans |
-| `agent-run` | Script to run Claude or Codex as builder or reviewer, resumable by session |
-| `thermal-review-loop` | Review, triage, fix, same-reviewer approval; a fresh reviewer only for risky targets and the final diff |
-| `code-quality-review` | Lens for code |
-| `verify-plan-delivery` | Acceptance audit against the plan, including live proof |
-| `writing-prd`, `writing-tdd` | Product and technical design docs |
+| `writing-plans` | Plan (slices, live proof, risk), get it reviewed, then build it as coordinator with builders and reviewers from different model families |
+| `review` | Review loop with triage and same-reviewer approval; lenses: plan, code, delivery |
+| `agent-run` | Script to run Claude or Codex as builder or reviewer, resumable by session; model defaults |
+| `writing-specs` | Lasting product (PRD) and design (TDD) docs in `docs/` |
 
 ## Per project
 
@@ -33,4 +29,4 @@ Each repo may add `.agents/build.md` (roles, gates, builder fences, how to run t
 
 ## Per machine
 
-Wrap a CLI for one machine (gateway, env swap) with an executable `~/.config/agent-run/codex` or `~/.config/agent-run/claude`. Model defaults live in `skills/agent-run/references/models.md`.
+Wrap a CLI for one machine (gateway, env swap) with an executable `~/.config/agent-run/codex` or `~/.config/agent-run/claude`.
