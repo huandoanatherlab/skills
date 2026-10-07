@@ -31,9 +31,9 @@ When you discovered the method yourself, propose the `Live check` section to the
 
 ## Run it
 
-- Write `build/live-plan.md`: one row per behavior with steps, expected result, and the slice it proves.
+- Write `<build dir>/live-plan.md`: one row per behavior with steps, expected result, and the slice it proves.
 - Run read-only rows in parallel and state-changing rows serially.
-- Save evidence under `build/evidence/` (screenshots, command output). Capture BEFORE and AFTER for bug fixes.
+- Save evidence under `<build dir>/evidence/` (screenshots, command output). Capture BEFORE and AFTER for bug fixes.
 - Fix what fails and re-run those rows.
 - Use only test accounts and test data. Never post to real external services.
 - Label any result that came from seeded or synthetic data.

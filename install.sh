@@ -16,23 +16,24 @@ backup() { # $1 = path, $2 = host label
 }
 
 for host in "${HOSTS[@]}"; do
-  [ -d "$host" ] || { echo "skip $host (missing)"; continue; }
+  $DRY mkdir -p "$host"
   label=$(basename "$(dirname "$host")")
   for name in "${REPLACED[@]}"; do
     t=$host/$name
-    if [ -L "$t" ]; then $DRY rm "$t"; echo "removed link $t"
-    elif [ -e "$t" ]; then backup "$t" "$label"; fi
+    if [ -e "$t" ] || [ -L "$t" ]; then backup "$t" "$label"; fi
   done
   for src in "$ROOT"/skills/*/; do
     name=$(basename "$src"); t=$host/$name
-    if [ -L "$t" ]; then $DRY rm "$t"
-    elif [ -e "$t" ]; then backup "$t" "$label"; fi
+    if [ -L "$t" ] && [ "$(readlink "$t")" = "${src%/}" ]; then echo "ok $t"; continue; fi
+    if [ -e "$t" ] || [ -L "$t" ]; then backup "$t" "$label"; fi
     $DRY ln -s "${src%/}" "$t"
     echo "linked $t"
   done
 done
 
+BIN=$HOME/.local/bin/agent-run
 $DRY mkdir -p "$HOME/.local/bin"
+if [ -e "$BIN" ] && [ ! -L "$BIN" ]; then backup "$BIN" bin; fi
 $DRY ln -sf "$ROOT/skills/agent-run/scripts/agent-run" "$HOME/.local/bin/agent-run"
 echo "linked ~/.local/bin/agent-run"
 [ -z "$DRY" ] && [ -d "$BACKUP" ] && echo "backups in $BACKUP"

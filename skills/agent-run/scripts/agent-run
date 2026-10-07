@@ -38,7 +38,7 @@ is_verdict() {
 
 run_turn() { # uses AGENT ROLE MODEL EFFORT CWD SID from meta; $1 = prompt file
   local prompt=$1 n out log code
-  n=$(( $(command ls "$D"/turn-*.exit 2>/dev/null | wc -l) + 1 ))
+  n=$(( $(command ls "$D"/turn-*.started 2>/dev/null | wc -l) + 1 ))
   out=$D/turn-$n.md; log=$D/turn-$n.log
   echo $$ > "$D/pid"; date +%s > "$D/turn-$n.started"
   cp "$prompt" "$D/turn-$n.prompt.md" 2>/dev/null || true
@@ -73,12 +73,12 @@ run_turn() { # uses AGENT ROLE MODEL EFFORT CWD SID from meta; $1 = prompt file
   fi
 
   write_meta
-  echo "$code" > "$D/turn-$n.exit"
-  rm -f "$D/pid"
   [ -s "$out" ] || { echo "agent-run: empty report $out (see $log)" >&2; [ "$code" = 0 ] && code=1; }
   if [ "$code" = 0 ] && [ "$ROLE" = reviewer ] && ! is_verdict "$(verdict_of "$out")"; then
     echo "agent-run: reviewer report has no verdict line: $out" >&2; code=3
   fi
+  echo "$code" > "$D/turn-$n.exit"
+  rm -f "$D/pid"
   echo "$out"
   return "$code"
 }
@@ -119,6 +119,7 @@ case "$cmd" in
     [ -f "$D/meta" ] && die "$D already has a session; use resume, or a new run dir"
     MODEL=""; EFFORT=""; CWD=$PWD; PROMPT=$D/prompt.md; SID=""
     while [ $# -gt 0 ]; do
+      [ $# -ge 2 ] || die "$1 needs a value"
       case "$1" in
         --model) MODEL=$2 ;; --effort) EFFORT=$2 ;; --cwd) CWD=$(cd "$2" && pwd) ;; --prompt) PROMPT=$2 ;;
         *) die "unknown option $1" ;;

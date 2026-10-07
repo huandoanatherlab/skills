@@ -31,7 +31,7 @@ For every stable slice ID, verify:
 - checklist items are implemented
 - focused verification evidence exists
 - thermal code-review gate completed
-- live proof at the slice's level (`smoke`, `story`, `suite`) has evidence, or a user waiver is recorded
+- live proof matches the slice's level: `none` is met by the focused verification above; `smoke`, `story` and `suite` need live evidence or a recorded user waiver
 - done criteria are observably true
 
 Do not accept a ledger checkbox as evidence by itself.

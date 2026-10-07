@@ -41,7 +41,7 @@ Never accept a whole round without the triage list.
 
 ## Stop rule
 
-Complete when the owning reviewer approved its own findings and no P0/P1 finding is open, plus a fresh first-pass `APPROVED` when step 6 applies. Do not add clean-pass rounds beyond that.
+Complete when the owning reviewer returns `APPROVED` on its own findings (its contract: no P0-P2 open; a rejection the user accepted counts as closed), plus a fresh first-pass `APPROVED` when step 6 applies. Do not add clean-pass rounds beyond that.
 
 ## Escalation
 

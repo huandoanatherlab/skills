@@ -5,7 +5,7 @@ description: Build an approved multi-slice plan as coordinator, with builders fr
 
 # Build Plan
 
-You are the **coordinator**. Builders write code, reviewers check it, you triage, integrate, commit, verify live and report. Run state lives on disk so any session, on Claude or Codex, can resume it.
+You are the **coordinator**. Builders write and commit code, reviewers check it, you triage, integrate, verify live and report. Run state lives on disk so any session, on Claude or Codex, can resume it.
 
 Read the host notes first: [references/host-claude.md](references/host-claude.md) or [references/host-codex.md](references/host-codex.md).
 
@@ -37,21 +37,21 @@ Then:
 
 1. Re-check the plan's file and line references against HEAD. Stop and update the plan if reality materially differs.
 2. Create the build dir `<scratch>/<topic>/build/` (scratch dir from the project config, default `.scratch/`). Make sure git ignores it (`git check-ignore`; otherwise add it to `.git/info/exclude`).
-3. Write `TRACKER.md` from [references/tracker.md](references/tracker.md), `QUESTIONS.md`, `briefs/COMMON.md` from [references/builder-brief.md](references/builder-brief.md) and `briefs/REVIEW.md` from [references/review-brief.md](references/review-brief.md), filled with the project's gates, fences and scratch paths.
-4. Write `runs/<slice>/prompt.md` for the first slice: "Read briefs/COMMON.md first", the slice ID and plan section, named tests, extra fences.
+3. In the build dir, write `TRACKER.md` from [references/tracker.md](references/tracker.md), `QUESTIONS.md`, `briefs/COMMON.md` from [references/builder-brief.md](references/builder-brief.md) and `briefs/REVIEW.md` from [references/review-brief.md](references/review-brief.md), filled with the project's gates, fences and scratch paths.
+4. Write `<build dir>/runs/<slice>/prompt.md` for the first slice: "Read briefs/COMMON.md first", the slice ID and plan section, named tests, extra fences.
 5. Start the environment the live check needs, if any (project config `Live check → start`).
 
 ## 2. Each slice
 
-1. **Build.** `agent-run start runs/<slice> <family> builder --cwd <worktree>` in the background. While it runs, write the next slice's prompt.
+1. **Build.** `agent-run start <build dir>/runs/<slice> <family> builder --cwd <worktree>` in the background. While it runs, write the next slice's prompt.
 2. **Check the claim.** Read the whole diff yourself and re-run the slice's named tests and gates. A builder's report is a claim, not evidence. To call a failure pre-existing, run the same test on the base commit.
-3. **Review.** Render `briefs/REVIEW.md` for the slice into `runs/<slice>-review/prompt.md` and run `agent-run start runs/<slice>-review <other family> reviewer --cwd <worktree>`. The loop below follows `thermal-review-loop`.
-4. **Triage** into `runs/<slice>/triage-N.md` before touching code: one line per finding, accept or reject, and why. Rules below.
-5. **Fix.** Send accepted findings to the same builder: `agent-run resume runs/<slice> <fix-prompt>`. Then send the reviewer every finding with its fix or rejection reason: `agent-run resume runs/<slice>-review <verify-prompt>`.
-6. **Commit** one commit per slice, staging by explicit path. Do a quick live check for user-visible slices. Log commit, verdict and evidence in `TRACKER.md`.
+3. **Review.** Render `briefs/REVIEW.md` for the slice into `<build dir>/runs/<slice>-review/prompt.md` and run `agent-run start <build dir>/runs/<slice>-review <other family> reviewer --cwd <worktree>`. The loop below follows `thermal-review-loop`.
+4. **Triage** into `<build dir>/runs/<slice>/triage-N.md` before touching code: one line per finding, accept or reject, and why. Rules below.
+5. **Fix.** Send accepted findings to the same builder: `agent-run resume <build dir>/runs/<slice> <fix-prompt>`. Then send the reviewer every finding with its fix or rejection reason: `agent-run resume <build dir>/runs/<slice>-review <verify-prompt>`.
+6. **Record** the builder's commits (the slice commit plus one per fix round); in `inline` mode commit yourself, staging by explicit path. Do a quick live check for user-visible slices. Log commit, verdict and evidence in `TRACKER.md`.
 7. **Launch the next slice immediately.** Answering a user question mid-run never ends the turn without starting the next step.
 
-A slice is done when its reviewer approves its own findings with no P0/P1 open, its live proof (if `smoke` or `story`) passed, and the commit is in `TRACKER.md`. Slices tagged risky in the plan (migration, persistence, permissions, security, public contract) also need a fresh reviewer's first-pass `APPROVED`.
+A slice is done when its reviewer approves its own findings with no P0/P1 open, its live proof (if `smoke` or `story`) passed, and its commits are in `TRACKER.md`. Slices tagged risky in the plan (migration, persistence, permissions, security, public contract) also need a fresh reviewer's first-pass `APPROVED`.
 
 **Parallel slices** only when files, state and contracts do not overlap. Give each its own worktree (and its own database when tests write data), run at most 3 builders and 6 agent processes at once, and merge the worktrees yourself.
 
@@ -81,9 +81,9 @@ Small detail that keeps architecture and acceptance criteria: log it in `TRACKER
 
 1. **Whole-diff review** by a fresh reviewer from the other family, using `code-quality-review`: clean structure, no dead code or duplicated helpers, no slice IDs in code comments. Triage and fix as above.
 2. **Gates** from the project config. Classify every failure against the base commit.
-3. **Live check** per [references/live-check.md](references/live-check.md): one row per user-visible behavior, evidence saved under `build/evidence/`. Label results from seeded or synthetic data.
+3. **Live check** per [references/live-check.md](references/live-check.md): one row per user-visible behavior, evidence saved under `<build dir>/evidence/`. Label results from seeded or synthetic data.
 4. **Delivery audit** with `verify-plan-delivery`. Fix what it finds and repeat the affected slice review.
-5. **Report** in `FINAL-REPORT.md`: commit range and deploy order, slices with models, review verdicts, rejected findings with reasons, deviations, live-check results with evidence paths, failed or skipped gates, open questions, and the delivery verdict. Do not hide a failure behind "tests pass".
+5. **Report** in `<build dir>/FINAL-REPORT.md`: commit range and deploy order, slices with models, review verdicts, rejected findings with reasons, deviations, live-check results with evidence paths, failed or skipped gates, open questions, and the delivery verdict. Do not hide a failure behind "tests pass".
 
 ## Running unattended
 
