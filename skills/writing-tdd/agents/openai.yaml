@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writing TDD"
+  short_description: "Create and revise implementation-ready TDDs"
+  default_prompt: "Use $writing-tdd to create or update a concise, grounded TDD in docs/tdd for the current task."

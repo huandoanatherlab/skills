@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writing PRD"
+  short_description: "Create and revise agent-readable PRDs"
+  default_prompt: "Use $writing-prd to create or update a concise, grounded PRD in docs/prd for the current task."
