@@ -42,7 +42,7 @@ Requires a plan with Review Status `approved` and no open architecture decision.
 1. Show one table: plan, branch and HEAD, worktree, dirty files, environment, roles with models, slice order and parallel groups. Wait for "go" unless already given.
 2. Re-check the plan's file and line references against HEAD.
 3. In `build/`, write `TRACKER.md`, `QUESTIONS.md`, `briefs/COMMON.md` and `briefs/REVIEW.md` from [references/templates.md](references/templates.md), filled with the project's gates and fences.
-4. Create one worktree per parallel group (`git worktree add`, next to the repo unless `.agents/build.md` says otherwise); sequential slices share one.
+4. Create one worktree per slice that runs in parallel (`git worktree add`, next to the repo unless `.agents/build.md` says otherwise); sequential slices share one.
 5. Start the environment the live checks need, if any.
 
 Choose a mode per slice:
