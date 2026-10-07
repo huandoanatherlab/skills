@@ -34,7 +34,32 @@ Builders run unattended with full shell, so their prompt must carry fences (work
 
 ## Models
 
-Read [references/models.md](references/models.md) before picking a model. Honor a model the user names. Default: Claude `opus` (`AGENT_RUN_CLAUDE_MODEL`), Codex `gpt-6.1-sol` (`AGENT_RUN_CODEX_MODEL`); effort `medium` for builders, `high` for reviewers. State every fallback in the report.
+Honor a model the user names. Default: Claude `opus` (`AGENT_RUN_CLAUDE_MODEL`), Codex `gpt-6.1-sol` (`AGENT_RUN_CODEX_MODEL`); effort `medium` for builders, `high` for reviewers. State every fallback in the report. Model catalogs change; update this section, not the skills that use it.
+
+### Codex
+
+| Work | Model | Effort |
+| --- | --- | --- |
+| Mechanical edits, lookups | `gpt-6.1-sol` | low |
+| Implementation | `gpt-6.1-sol` | medium |
+| Code, plan or architecture review | `gpt-6.1-sol` | high |
+| Exceptional hard reasoning | `gpt-6.1-sol` | xhigh, only when justified |
+
+### Claude
+
+| Work | Model | Effort |
+| --- | --- | --- |
+| Mechanical edits | `sonnet` | low |
+| Implementation | `opus` | medium |
+| Review | `opus` | high |
+| Hard design or plan review | `fable` | high |
+
+### Pairing
+
+- Builder and reviewer come from different families by default: Claude builds, Codex reviews, or the reverse. Different families miss different bugs.
+- Same-reviewer validation keeps the same run dir, so the same model and session.
+- A fresh reviewer is a new run dir.
+- If a family is down, use the other family's strongest model or a native subagent, and say which one you used.
 
 ## Machine setup
 

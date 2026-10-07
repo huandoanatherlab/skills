@@ -53,4 +53,4 @@ Then propose the `Live check` section and write it once the user approves.
 - Fix what fails and re-run those rows before the acceptance audit.
 - Evidence in `build/evidence/`. Label results from seeded or synthetic data.
 - Test accounts and data only; never post to real external services.
-- Cannot start or drive the app: mark the rows **not verified** with the exact blocker. `verify-plan-delivery` then returns `DELIVERY INCOMPLETE` unless the user waives it in chat. Never write E2E code the plan did not ask for just to get a pass.
+- Cannot start or drive the app: mark the rows **not verified** with the exact blocker. The delivery review then returns `DELIVERY INCOMPLETE` unless the user waives it in chat. Never write E2E code the plan did not ask for just to get a pass.

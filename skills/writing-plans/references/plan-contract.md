@@ -78,18 +78,18 @@ Decided in the plan so review can challenge it. Name behaviors, not tooling; how
 
 ### Risk
 
-`risky` when the slice touches migrations, persistence, permissions, security or a public contract; otherwise `normal`. A risky slice needs a fresh reviewer's first-pass approval (see `thermal-review-loop`).
+`risky` when the slice touches migrations, persistence, permissions, security or a public contract; otherwise `normal`. A risky slice needs a fresh reviewer's first-pass approval (see `review`).
 
 ## Review Status
 
 ```markdown
 ## Review Status
 
-- Lens: `plan-review`
+- Lens: `review` plan lens
 - Reviewer: <family/model>, approved its findings in round <N>
 - Fresh pass (risky plans only): `APPROVED` | not required
 - Residual unrelated issues: none | list
 - Status: approved | stopped-with-open-findings
 ```
 
-Use `approved` only after the complete `thermal-review-loop` done definition is satisfied.
+Use `approved` only after the `review` loop's done definition is satisfied.

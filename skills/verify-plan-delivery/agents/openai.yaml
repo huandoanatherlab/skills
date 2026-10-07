@@ -1,4 +1,0 @@
-interface:
-  display_name: "Verify Plan Delivery"
-  short_description: "Prove implementation matches the approved plan"
-  default_prompt: "Use $verify-plan-delivery to verify that this implementation fully satisfies its approved plan."

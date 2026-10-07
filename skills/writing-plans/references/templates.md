@@ -22,27 +22,16 @@ You are the implementer for ONE slice of `<plan path>`.
 ## briefs/REVIEW.md (per slice: replace `{{SLICE}}`, `{{WT}}`, `{{BASE}}`)
 
 ```markdown
-Review slice {{SLICE}} of `<plan path>` with the `code-quality-review` lens if you have it. Review manually. Do not edit files or spawn subagents.
+Review slice {{SLICE}} of `<plan path>` with the code lens: read `<absolute path to review/references/code.md>` and the Severity and Calibration sections of `<absolute path to review/SKILL.md>` first.
 
 - Diff: `git -C {{WT}} diff {{BASE}}..HEAD` and `git -C {{WT}} log {{BASE}}..HEAD`.
 - Implementer report (a claim; check it): `<build>/runs/{{SLICE}}/report.md`.
 - Project rules: `<AGENTS.md / CLAUDE.md>`. <one-line calibration from .agents/build.md>
 
-Check correctness against the slice's checklist and cited design, scope (nothing from other slices), simplicity, and behavior-guarding tests. Do not raise implausible edge cases, wider test matrices, or machinery a realistic failure does not need.
-
-Severity: P0 security or data loss; P1 wrong primary behavior or broken contract; P2 unmet checklist item or real bug on a plausible path; P3 advisory.
-Each finding: severity, file:line, what is wrong, failure scenario, smallest fix.
-End with exactly one line: `APPROVED` (no P0-P2 open) or `CHANGES REQUIRED`.
+Also check scope: nothing from other slices, nothing outside the plan. Review manually. Do not edit files or spawn subagents. End with exactly one line: `APPROVED` or `CHANGES REQUIRED`.
 ```
 
-## Verify prompt (same reviewer)
-
-```markdown
-Round <N>. Your findings:
-- <finding>: fixed in <sha> | rejected: <one-line reason>
-
-Validate only your own findings against the current diff. Accept a rejection unless it leaves a real P0-P2 problem. Raise a new finding only if a fix created it. End with exactly one line: `APPROVED` or `CHANGES REQUIRED`.
-```
+Verify rounds use the prompt in `review` step 4.
 
 ## TRACKER.md
 
