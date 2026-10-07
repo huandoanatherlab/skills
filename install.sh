@@ -33,8 +33,9 @@ done
 
 BIN=$HOME/.local/bin/agent-run
 $DRY mkdir -p "$HOME/.local/bin"
-if [ -e "$BIN" ] && [ ! -L "$BIN" ]; then backup "$BIN" bin; fi
-$DRY ln -sf "$ROOT/skills/agent-run/scripts/agent-run" "$HOME/.local/bin/agent-run"
+SRC=$ROOT/skills/agent-run/scripts/agent-run
+if { [ -e "$BIN" ] || [ -L "$BIN" ]; } && [ "$(readlink "$BIN")" != "$SRC" ]; then backup "$BIN" bin; fi
+$DRY ln -sf "$SRC" "$BIN"
 echo "linked ~/.local/bin/agent-run"
 [ -z "$DRY" ] && [ -d "$BACKUP" ] && echo "backups in $BACKUP"
 exit 0
