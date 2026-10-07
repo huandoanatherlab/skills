@@ -13,7 +13,7 @@ One loop, three lenses. The loop owns the reviewer's lifecycle, triage, fixes an
 | code | A diff or file set | [references/code.md](references/code.md) | `APPROVED` / `CHANGES REQUIRED` |
 | delivery | A finished build against its approved plan | [references/delivery.md](references/delivery.md) | `DELIVERY COMPLETE` / `DELIVERY INCOMPLETE` |
 
-When you are asked to review directly (you are the reviewer), read the lens file and follow it; skip the loop.
+When you are asked to review directly (you are the reviewer), read the lens file and follow it, skip the loop, and do not edit files or spawn subagents.
 
 ## The loop
 
@@ -64,7 +64,7 @@ Ground every finding in something you read. Calibrate to the project: read its `
 
 Check only the areas the target touches:
 
-- **Frontend:** loading, empty, error, disabled and stale states; keyboard and focus; server/client ownership; fetch waterfalls and needless re-renders.
+- **Frontend:** loading, empty, error, disabled and stale states; semantic controls, labels, keyboard, focus and reduced motion; hydration and server/client ownership; fetch waterfalls, bundle growth and needless re-renders; run the repo's frontend diagnostic if it has one.
 - **Migration and persistence:** forward path, rollback or stated no-rollback, mixed versions during deploy, idempotent backfills, constraints and defaults, one source of truth.
 - **Permissions and security:** auth traced from entry point to action, deny by default, server-side checks for model output, tenant and secret boundaries, no sensitive data in errors or logs.
 - **Concurrency and lifecycle:** cancellation, duplicate delivery, ordering, atomic related changes, an owner for startup, teardown and reload.

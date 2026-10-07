@@ -78,7 +78,7 @@ Decided in the plan so review can challenge it. Name behaviors, not tooling; how
 
 ### Risk
 
-`risky` when the slice touches migrations, persistence, permissions, security or a public contract; otherwise `normal`. A risky slice needs a fresh reviewer's first-pass approval (see `review`).
+`risky` when the slice touches migrations, persistence, permissions, security or a public contract; otherwise `normal`. A risky slice needs a fresh reviewer's first-pass approval (see `review`). A plan is risky when any of its slices is.
 
 ## Review Status
 

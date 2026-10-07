@@ -29,7 +29,7 @@ A build plan (slices, files, checklists) belongs to `writing-plans`, not here. E
 3. Update the narrowest owning document; keep stable IDs and link sources (the current task is a valid source). Never invent owners, approvals or thresholds.
 4. **PRD:** one observable behavior per requirement, each with testable acceptance (success and a relevant failure). Plain language by default; MUST only for real obligations; measurable targets only when supported. Keep architecture out unless it is a product constraint.
 5. **TDD:** ground the baseline in code. Split required invariants (with their reason), the chosen design, and implementation freedom the builder may decide. Cover only the concerns the design touches: state and consistency, concurrency and idempotency, retry and recovery, security and privacy, telemetry, rollout and rollback, migration, compatibility. Verification names observable outcomes and focused checks, planned separately from executed.
-6. Sync the other doc when the change clearly affects it; otherwise name the remaining update.
+6. Sync every affected canonical source (PRD, TDD, ADR, schema or contract) when the change clearly affects it, and validate changed contracts against their own compatibility rules; otherwise name the remaining update.
 
 Merge or omit template sections rather than writing N/A.
 

@@ -57,7 +57,7 @@ The roles in `.agents/build.md` override these defaults; the user overrides both
 
 1. **Build.** Write `build/runs/<slice>/prompt.md` ("Read briefs/COMMON.md first", slice ID, named tests, extra fences), then `agent-run start build/runs/<slice> <family> builder --cwd <worktree>` in the background; confirm `agent-run status` shows it `running`. Write the next slice's prompt while it runs.
 2. **Check the claim.** Read the whole diff and re-run the slice's named tests and gates. A builder's report is a claim, not evidence. If the builder exited without committing (usually a forbidden background job), resume it with the rule restated. A failure is pre-existing only if the same test fails on the base commit.
-3. **Review** with `review`, code lens: render `briefs/REVIEW.md` into `build/runs/<slice>-review/prompt.md` and run it as the reviewer. Accepted fixes go to the same builder with `agent-run resume build/runs/<slice> <fix-prompt>`.
+3. **Review** with the `review` loop, code lens: render `briefs/REVIEW.md` into `build/runs/<slice>-review/prompt.md`, start the reviewer with `agent-run start build/runs/<slice>-review <other family> reviewer --cwd <worktree>`, and follow `review` for triage and same-reviewer validation. You are the fix owner: send accepted fixes to the same builder with `agent-run resume build/runs/<slice> <fix-prompt>`.
 4. **Live proof** at the slice's level ([references/project.md](references/project.md)), between builds, never while a builder edits a watched dev server.
 5. **Record** commits, verdict and evidence in `TRACKER.md`. Then launch the next slice at once; answering a question mid-run never ends the turn.
 
