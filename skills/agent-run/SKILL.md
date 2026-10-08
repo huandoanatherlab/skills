@@ -1,11 +1,11 @@
 ---
 name: agent-run
-description: Run Claude Code or Codex as a separate builder or reviewer process with a chosen model and effort, resumable by session; use when an orchestration skill needs another model family, or the user asks to consult or delegate to Claude or Codex.
+description: Run Claude Code (or Codex, when named) as a separate builder or reviewer process with a chosen model and effort, resumable by session; use when an orchestration skill needs a builder or reviewer, or the user asks to consult or delegate to Claude or Codex.
 ---
 
 # Agent Run
 
-`scripts/agent-run` is the transport for every cross-model run. It only carries prompts; the calling skill owns the task contract, review lens, triage and completion state.
+`scripts/agent-run` is the transport for every builder and reviewer run. It only carries prompts; the calling skill owns the task contract, review lens, triage and completion state.
 
 ## Commands
 
@@ -34,32 +34,21 @@ Builders run unattended with full shell, so their prompt must carry fences (work
 
 ## Models
 
-Honor a model the user names. Default: Claude `opus` (`AGENT_RUN_CLAUDE_MODEL`), Codex `gpt-6.1-sol` (`AGENT_RUN_CODEX_MODEL`); effort `medium` for builders, `high` for reviewers. State every fallback in the report. Model catalogs change; update this section, not the skills that use it.
-
-### Codex
+Honor a model the user names. Default agent is `claude`: builders run Sonnet 5.5 (`claude-sonnet-5-5`, effort `medium`) and reviewers run Opus 5.5 (`claude-opus-5-5`, effort `high`). `AGENT_RUN_CLAUDE_BUILDER_MODEL` and `AGENT_RUN_CLAUDE_REVIEWER_MODEL` override them. Codex runs only when the user names it (default `gpt-6.1-sol`, `AGENT_RUN_CODEX_MODEL`). State every fallback in the report. Model catalogs change; update this section, not the skills that use it.
 
 | Work | Model | Effort |
 | --- | --- | --- |
-| Mechanical edits, lookups | `gpt-6.1-sol` | low |
-| Implementation | `gpt-6.1-sol` | medium |
-| Code, plan or architecture review | `gpt-6.1-sol` | high |
-| Exceptional hard reasoning | `gpt-6.1-sol` | xhigh, only when justified |
-
-### Claude
-
-| Work | Model | Effort |
-| --- | --- | --- |
-| Mechanical edits | `sonnet` | low |
-| Implementation | `opus` | medium |
-| Review | `opus` | high |
-| Hard design or plan review | `fable` | high |
+| Mechanical edits, lookups | `claude-sonnet-5-5` | low |
+| Implementation | `claude-sonnet-5-5` | medium |
+| Code, plan or architecture review | `claude-opus-5-5` | high |
+| Exceptional hard reasoning | `claude-opus-5-5` | xhigh, only when justified |
 
 ### Pairing
 
-- Builder and reviewer come from different families by default: Claude builds, Codex reviews, or the reverse. Different families miss different bugs.
+- Builder and reviewer are different models: Sonnet 5.5 builds, Opus 5.5 reviews.
 - Same-reviewer validation keeps the same run dir, so the same model and session.
 - A fresh reviewer is a new run dir.
-- If a family is down, use the other family's strongest model or a native subagent, and say which one you used.
+- If Claude is down, use a native subagent, or Codex if the user allows it, and say which one you used.
 
 ## Machine setup
 

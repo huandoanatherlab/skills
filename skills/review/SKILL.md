@@ -19,7 +19,7 @@ When you are asked to review directly (you are the reviewer), read the lens file
 
 **Inputs:** target and paths, lens, acceptance criteria, fix owner, evidence already run, known unrelated failures, and risk (`risky` as defined in `writing-plans` references/plan-contract.md).
 
-**Reviewer:** from the other model family than the author, run with `agent-run start <run-dir> <family> reviewer`. Use a native subagent only when the other family is down, and say so. Its prompt is self-contained, never your session history or conclusions:
+**Reviewer:** Opus 5.5, run with `agent-run start <run-dir> claude reviewer` (its default model). Use a native subagent only when `agent-run` cannot reach Claude, and say so. Its prompt is self-contained, never your session history or conclusions:
 
 ```text
 Review <target> with the <lens> lens: read <absolute path to the lens file> first.

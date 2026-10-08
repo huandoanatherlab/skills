@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Plan and build a multi-step code change: write an evidence-grounded plan, get it reviewed, then build it slice by slice with builders and reviewers from different model families.
+description: Plan and build a multi-step code change: write an evidence-grounded plan, get it reviewed, then build it slice by slice with Sonnet builders and Opus reviewers.
 ---
 
 # Writing Plans
@@ -47,17 +47,17 @@ Requires a plan with Review Status `approved` and no open architecture decision.
 
 Choose a mode per slice:
 
-- **cross** (default): builder from the host family, reviewer from the other family, both via `agent-run`.
-- **inline**: tiny or tightly coupled slices sharing files. You build and commit; the reviewer is still the other family.
-- **native**: the other family is down. Fresh native subagents; say so in the report.
+- **cross** (default): Sonnet 5.5 builder and Opus 5.5 reviewer, both via `agent-run`.
+- **inline**: tiny or tightly coupled slices sharing files. You build and commit; the reviewer is still an Opus 5.5 run.
+- **native**: `agent-run` cannot reach Claude. Fresh native subagents; say so in the report.
 
 The roles in `.agents/build.md` override these defaults; the user overrides both.
 
 ## Each slice
 
-1. **Build.** Write `build/runs/<slice>/prompt.md` ("Read briefs/COMMON.md first", slice ID, named tests, extra fences), then `agent-run start build/runs/<slice> <family> builder --cwd <worktree>` in the background; confirm `agent-run status` shows it `running`. Write the next slice's prompt while it runs.
+1. **Build.** Write `build/runs/<slice>/prompt.md` ("Read briefs/COMMON.md first", slice ID, named tests, extra fences), then `agent-run start build/runs/<slice> claude builder --cwd <worktree>` in the background; confirm `agent-run status` shows it `running`. Write the next slice's prompt while it runs.
 2. **Check the claim.** Read the whole diff and re-run the slice's named tests and gates. A builder's report is a claim, not evidence. If the builder exited without committing (usually a forbidden background job), resume it with the rule restated. A failure is pre-existing only if the same test fails on the base commit.
-3. **Review** with the `review` loop, code lens: render `briefs/REVIEW.md` into `build/runs/<slice>-review/prompt.md`, start the reviewer with `agent-run start build/runs/<slice>-review <other family> reviewer --cwd <worktree>`, and follow `review` for triage and same-reviewer validation. You are the fix owner: send accepted fixes to the same builder with `agent-run resume build/runs/<slice> <fix-prompt>`.
+3. **Review** with the `review` loop, code lens: render `briefs/REVIEW.md` into `build/runs/<slice>-review/prompt.md`, start the reviewer with `agent-run start build/runs/<slice>-review claude reviewer --cwd <worktree>`, and follow `review` for triage and same-reviewer validation. You are the fix owner: send accepted fixes to the same builder with `agent-run resume build/runs/<slice> <fix-prompt>`.
 4. **Live proof** at the slice's level ([references/project.md](references/project.md)), between builds, never while a builder edits a watched dev server.
 5. **Record** commits, verdict and evidence in `TRACKER.md`. Then launch the next slice at once; answering a question mid-run never ends the turn.
 
@@ -72,7 +72,7 @@ Run slices in parallel only when files, state and contracts do not overlap: one 
 1. **Whole-diff review** with `review`, code lens, by a fresh reviewer: dead code, duplicated helpers, oversized files, slice IDs in comments.
 2. **Gates** from `.agents/build.md`; classify each failure against the base commit.
 3. **Live check** of every `smoke`/`story`/`suite` slice end to end, evidence in `build/evidence/`.
-4. **Acceptance audit** with `review`, delivery lens, by a reviewer from the other family; fix what it finds and repeat that slice's review.
+4. **Acceptance audit** with `review`, delivery lens, by a fresh Opus 5.5 reviewer; fix what it finds and repeat that slice's review.
 5. **Report** in `build/FINAL-REPORT.md`: commit range and deploy order, slices with models, verdicts, rejected findings with reasons, deviations, live results with evidence paths, failed or skipped gates, open questions, delivery verdict. Never hide a failure behind "tests pass".
 
 ## Unattended
