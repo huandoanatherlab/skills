@@ -33,7 +33,7 @@ Then show the user: plan path, review status, open decisions. Continue to Build 
 
 You are the **coordinator**. Builders write and commit code, reviewers check it, you triage, verify and report. You never review your own code. Run state lives in `build/` so any session on Claude or Codex can resume it.
 
-Read [references/hosts.md](references/hosts.md) for your host. Builders and reviewers run through `agent-run` (on `PATH` after install; otherwise `../agent-run/scripts/agent-run` from this skill's directory).
+Read [references/hosts.md](references/hosts.md) for your host. Builders and reviewers run through `agent-run` (on `PATH` after `install.sh`).
 
 ## Start
 

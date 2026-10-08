@@ -5,7 +5,7 @@ description: Run Claude Code (or Codex, when named) as a separate builder or rev
 
 # Agent Run
 
-`scripts/agent-run` is the transport for every builder and reviewer run. It only carries prompts; the calling skill owns the task contract, review lens, triage and completion state.
+`agent-run` is the transport for every builder and reviewer run. It only carries prompts; the calling skill owns the task contract, review lens, triage and completion state.
 
 ## Commands
 
@@ -21,7 +21,7 @@ agent-run status [<dir>]
 - Every call prints the turn's report path: `turn-N.md` (final message), with `turn-N.log` and `turn-N.exit` beside it.
 - Exit code is the agent's, or `3` when a reviewer's report does not end with a verdict line. Resume that reviewer and ask for the verdict before using the report.
 
-Path: `<skill dir>/scripts/agent-run`. The script runs in the foreground; background it the way the host allows (see `writing-plans` references/hosts.md).
+`agent-run` is on `PATH` (`install.sh` links it from the skills repo's `bin/agent-run`). The script runs in the foreground; background it the way the host allows (see `writing-plans` references/hosts.md).
 
 ## Roles and permissions
 
@@ -34,7 +34,7 @@ Builders run unattended with full shell, so their prompt must carry fences (work
 
 ## Models
 
-Honor a model the user names. Default agent is `claude`: builders run Sonnet 5.5 (`claude-sonnet-5-5`, effort `medium`) and reviewers run Opus 5.5 (`claude-opus-5-5`, effort `high`). `AGENT_RUN_CLAUDE_BUILDER_MODEL` and `AGENT_RUN_CLAUDE_REVIEWER_MODEL` override them. Codex runs only when the user names it (default `gpt-6.1-sol`, `AGENT_RUN_CODEX_MODEL`). State every fallback in the report. Model catalogs change; update this section, not the skills that use it.
+Honor a model the user names. Default agent is `claude`: builders run Sonnet 5.5 (`claude-sonnet-5-5`, effort `medium`) and reviewers run Opus 5.5 (`claude-opus-5-5`, effort `high`). `AGENT_RUN_CLAUDE_BUILDER_MODEL` and `AGENT_RUN_CLAUDE_REVIEWER_MODEL` override them. Codex runs only when the user names it. State every fallback in the report. Model catalogs change; update this section, not the skills that use it.
 
 | Work | Model | Effort |
 | --- | --- | --- |
