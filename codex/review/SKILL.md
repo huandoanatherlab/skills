@@ -19,7 +19,7 @@ When you are asked to review directly (you are the reviewer), read the lens file
 
 **Inputs:** target and paths, lens, acceptance criteria, fix owner, evidence already run, known unrelated failures, and risk (`risky` as defined in `writing-plans` references/plan-contract.md).
 
-**Reviewer:** `gpt-6-astra`, run with `agent-run start <run-dir> codex reviewer` (its default model). Use a native subagent only when `agent-run` cannot reach Codex, and say so. Its prompt is self-contained, never your session history or conclusions:
+**Reviewer:** from the other family than the author: Codex `gpt-6.1-sol` at high for Claude-written work, Opus 5.5 at high for GPT-written work (`agent-run`, Pairing). Launch it the way the `agent-run` skill says: T3 `delegate_task` when the tool is there, else the host's subagent tool when it can run that model, else `agent-run start <run-dir> <codex|claude> reviewer`. Say which model and launcher ran. Its prompt is self-contained, never your session history or conclusions:
 
 ```text
 Review <target> with the <lens> lens: read <absolute path to the lens file> first.
@@ -30,12 +30,13 @@ Each finding: severity P0-P3, file:line, what is wrong, failure scenario, smalle
 End with exactly one verdict line.
 ```
 
-1. Start the reviewer. If its report lacks the lens's verdict line, resume it and ask again before acting.
+1. Start the reviewer. If its report lacks the lens's verdict line, ask the same reviewer again before acting.
 2. On a failing verdict, **triage** every finding into `triage-N.md` before touching anything, one line each:
    - Accept: bugs a user can hit, data loss, broken contracts, type errors, wrong file/line claims, unmet acceptance criteria, violations of the project's own rules.
+   - Reviewers over-engineer, Codex most of all. Never accept every finding of a round without sorting it through this list.
    - Reject: machinery the realistic case does not need (retries, flags, extra state, audit rows, locks), edge cases needing an implausible sequence, wider test matrices, copy or DOM-shape tests, anything the plan cut on purpose.
 3. The fix owner fixes accepted findings and runs focused verification.
-4. Resume the **same** reviewer (`agent-run resume`) with every finding and its fix or rejection reason: "Validate only your own findings. Accept a rejection unless it leaves a real P0-P2 problem. Raise a new finding only if a fix created it."
+4. Go back to the **same** reviewer (the launcher's follow-up in `agent-run`; under T3 a new task with the same model and its earlier findings) with every finding and its fix or rejection reason: "Validate only your own findings. Accept a rejection unless it leaves a real P0-P2 problem. Raise a new finding only if a fix created it."
 5. Repeat until it passes.
 6. For a `risky` target or the final whole-diff review of a build, start one **fresh** reviewer with a complete prompt. Its first-pass approval closes the loop; otherwise it owns its new findings and the loop repeats from step 2.
 
@@ -45,7 +46,7 @@ End with exactly one verdict line.
 
 A user stop is `stopped-with-open-findings`, never approval.
 
-**Report:** lens, reviewer models and run dirs, rounds, accepted and rejected findings with reasons, replacements, evidence, final state.
+**Report:** lens, reviewer models, launchers and run dirs, rounds, accepted and rejected findings with reasons, replacements, evidence, final state.
 
 ## Severity (all lenses)
 

@@ -45,6 +45,7 @@ Verify rounds use the prompt in `review` step 4.
 | Slice | Mode | Builder | Reviewer | State | Commits | Verdict | Live | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
+Builder and Reviewer cells: `<model>/<effort> via <t3|host|script>`, plus the task, agent or session id.
 States: pending, blocked (name the blocker), building, reviewing, fixing, complete.
 
 ## Log

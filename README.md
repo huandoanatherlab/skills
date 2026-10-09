@@ -1,6 +1,6 @@
 # Skills
 
-Plan, build and review skills, with one set for Claude Code and one for Codex. Each set uses its own host's models.
+Plan, build and review skills, with one set for Claude Code and one for Codex. Both sets mix the two families the same way: Claude models build, a Codex model reviews.
 
 ```bash
 ./install.sh --dry-run
@@ -13,26 +13,36 @@ Plan, build and review skills, with one set for Claude Code and one for Codex. E
 
 ```
 writing-specs (optional) → writing-plans: plan ─review(plan)→ build ─review(code)→ review(delivery)
-                                                                 └─ agent-run: builder and reviewer runs
+                                                                 └─ agent-run: launches builder and reviewer runs
 ```
 
 | Skill | Job |
 | --- | --- |
 | `writing-plans` | Plan (slices, live proof, risk), get it reviewed, then build it as coordinator with builder and reviewer runs |
 | `review` | Review loop with triage and same-reviewer approval; lenses: plan, code, delivery |
-| `agent-run` | Model defaults for this host; the shared `bin/agent-run` script runs Claude or Codex as builder or reviewer, resumable by session |
+| `agent-run` | Models by job and the launch order for builder, reviewer and helper runs |
 | `writing-specs` | Lasting product (PRD) and design (TDD) docs in `docs/` |
 
 ## Models
 
-| Set | Builder | Reviewer |
+| Work | Model | Effort |
 | --- | --- | --- |
-| `claude/` | `claude-sonnet-5-5`, medium | `claude-opus-5-5`, high |
-| `codex/` | `gpt-6.1-sol`, medium | `gpt-6-astra`, medium |
+| Lookups | `claude-haiku-5-5` | default |
+| Code mapping, mechanical edits | `claude-sonnet-5-5` | low |
+| Builder | `claude-opus-5-5` | medium |
+| Reviewer | Codex `gpt-6.1-sol` | high, read-only |
 
-`bin/agent-run` picks these from the agent and role you pass. Override them with `--model` and `--effort`, or with `AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL`.
+Design, review triage and small fixes stay with the coordinator. The reviewer is always from the other family than the author, so GPT-written work goes to `claude-opus-5-5` at high. The full table and the fallbacks are in each set's `agent-run/SKILL.md`.
 
-The two sets differ only in model names and host notes. When you change shared wording (review lenses, plan contract, templates, specs), change both sets.
+## Launching a run
+
+Each run uses the first launcher that can run its model:
+
+1. T3 `delegate_task`, when the session is a T3 Code thread and has the tool.
+2. The host's own subagent tool, for a model of the host's family (Claude Code's `Agent` tool for Claude models, Codex's subagent tool for GPT models).
+3. `bin/agent-run`, the script, for everything else. It runs Claude or Codex as builder or reviewer, resumable by session, and picks the model from the agent and role you pass. Override with `--model` and `--effort`, or with `AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL`.
+
+The two sets differ only in the host subagent section and host notes. When you change shared wording (review lenses, plan contract, templates, specs), change both sets.
 
 ## Per project
 

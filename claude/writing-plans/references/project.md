@@ -8,8 +8,8 @@ One short file per repo; every section optional. It holds what the shared skills
 # Build config
 
 ## Roles
-- builder: claude claude-sonnet-5-5 medium
-- reviewer: claude claude-opus-5-5 high
+- builder: claude claude-opus-5-5 medium
+- reviewer: codex gpt-6.1-sol high
 
 ## Scratch
 - .scratch/

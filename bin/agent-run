@@ -13,8 +13,8 @@
 # Builders run without permission prompts; reviewers run read-only.
 # Machine overrides: AGENT_RUN_CLAUDE / AGENT_RUN_CODEX, or executables ~/.config/agent-run/{claude,codex}
 # (use them to wrap a CLI in a gateway).
-# Defaults (model/effort): claude builder claude-sonnet-5-5/medium, claude reviewer claude-opus-5-5/high,
-# codex builder gpt-6.1-sol/medium, codex reviewer gpt-6-astra/medium. Override a model with
+# Defaults (model/effort): claude builder claude-opus-5-5/medium, claude reviewer claude-opus-5-5/high,
+# codex builder gpt-6.1-sol/medium, codex reviewer gpt-6.1-sol/high. Override a model with
 # AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL, or pass --model / --effort.
 # Exit code: the agent's exit code, or 3 when a reviewer's last line is not a verdict.
 set -u
@@ -129,10 +129,10 @@ case "$cmd" in
       esac; shift 2
     done
     case "$AGENT/$ROLE" in
-      claude/builder) MODEL=${MODEL:-${AGENT_RUN_CLAUDE_BUILDER_MODEL:-claude-sonnet-5-5}}; EFFORT=${EFFORT:-medium} ;;
+      claude/builder) MODEL=${MODEL:-${AGENT_RUN_CLAUDE_BUILDER_MODEL:-claude-opus-5-5}}; EFFORT=${EFFORT:-medium} ;;
       claude/reviewer) MODEL=${MODEL:-${AGENT_RUN_CLAUDE_REVIEWER_MODEL:-claude-opus-5-5}}; EFFORT=${EFFORT:-high} ;;
       codex/builder) MODEL=${MODEL:-${AGENT_RUN_CODEX_BUILDER_MODEL:-gpt-6.1-sol}}; EFFORT=${EFFORT:-medium} ;;
-      codex/reviewer) MODEL=${MODEL:-${AGENT_RUN_CODEX_REVIEWER_MODEL:-gpt-6-astra}}; EFFORT=${EFFORT:-medium} ;;
+      codex/reviewer) MODEL=${MODEL:-${AGENT_RUN_CODEX_REVIEWER_MODEL:-gpt-6.1-sol}}; EFFORT=${EFFORT:-high} ;;
     esac
     [ -s "$PROMPT" ] || die "prompt not found: $PROMPT"
     write_meta
