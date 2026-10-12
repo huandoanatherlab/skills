@@ -2,7 +2,7 @@
 
 ## `.agents/build.md`
 
-One short file per repo; every section optional. It holds what the shared skills must not: commands, fences, how to run the app. No secrets.
+One short file per repo; every section optional. It holds what the shared skills must not: commands, fences, how to run the app, and lasting build rules the user states. No secrets. Roles here override the `agent-run` defaults, so delete the section rather than leave stale roles.
 
 ```markdown
 # Build config
@@ -14,10 +14,21 @@ One short file per repo; every section optional. It holds what the shared skills
 ## Scratch
 - .scratch/
 
+## Git
+- base: develop
+- ship: PR to base with evidence | merge to base | commit only
+- push: allowed | ask
+- migrations: <command per environment>
+
 ## Gates
-- pnpm format && pnpm lint && pnpm check
-- large changes: pnpm verify
+- focused (fix rounds): <typecheck and tests of the changed package>
+- full (merge, milestone, finish): pnpm format && pnpm lint && pnpm check && pnpm verify
 - single test: node --import tsx --test <file>
+
+## Environment
+- stack: <docker compose up -d db | none>; stop: <command>
+- recipes: <e.g. MIKRO_ORM_MIGRATIONS_SNAPSHOT=false for db:migrate, PGHOST=127.0.0.1>
+- seed logins: <where they live>
 
 ## Fences
 - test database: <url, or how to create one per worktree>
@@ -26,7 +37,7 @@ One short file per repo; every section optional. It holds what the shared skills
 ## Live check
 - start: skill `dev-lane` | `pnpm dev` | none
 - entry: https://<host>:<port> | ./bin/tool
-- drive: browser | curl | cli | playwright
+- drive: browser | curl | cli | playwright (list a fallback, e.g. `t3-preview, else playwright`, to switch without asking)
 - suite: pnpm e2e | none
 - accounts: <where test credentials live>
 

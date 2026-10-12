@@ -65,6 +65,8 @@ Include only applicable sections, but never omit information an implementer woul
 
 Use stable slice IDs so build reports, reviews, and deviations can refer to the same unit of work.
 
+**Size:** one builder run of about 90 minutes or less. Split a slice that spans several modules on both backend and frontend. For a port, write the rules from the source into the slice before building, so the builder does not fit them to fixtures. Long-running workers log their progress.
+
 ### Live proof levels
 
 Decided in the plan so review can challenge it. Name behaviors, not tooling; how to run the app lives in `.agents/build.md`.
@@ -75,6 +77,8 @@ Decided in the plan so review can challenge it. Name behaviors, not tooling; how
 | `smoke` | Internal change; the app must still run | App starts, health check passes, one main flow works |
 | `story` | User-visible behavior | One row per named behavior, driven like a real user, with screenshot or output |
 | `suite` | The project's E2E suite covers it | The named specs pass |
+
+A slice that changes UI needs at least `story`: every touched page opens, including with empty and null data. A slice that calls an external API needs a `story` against one real sample, or it is marked not verified.
 
 ### Risk
 

@@ -1,6 +1,6 @@
 ---
 name: agent-run
-description: Launch a separate builder, reviewer or helper agent with a chosen model and effort, through T3 delegate_task, the host's subagent tool, or the agent-run script, in that order; use when an orchestration skill needs a builder or reviewer, or the user asks to consult or delegate to Codex or Claude.
+description: Launch a separate builder, reviewer or helper agent with a chosen model and effort, through T3 delegate_task, the host's subagent tool, or the agent-run script, in that order; use when an orchestration skill needs a builder or reviewer, or the user asks to consult or delegate to Claude or Codex.
 ---
 
 # Agent Run
@@ -12,10 +12,10 @@ How to launch every builder, reviewer and helper run. The launcher only carries 
 Use the first launcher that can run the model you need:
 
 1. **T3 `delegate_task`**, when that tool is in your tool list (you are in a T3 Code thread). The run is visible and tracked in T3.
-2. **The host's subagent tool**, when the model is from the host's family: GPT models from Codex, Claude models from Claude Code.
+2. **The host's subagent tool**, when the model is from the host's family: Claude models from Claude Code, GPT models from Codex.
 3. **The `agent-run` script**, for everything else: the model is from the other family, the host has no subagent tool, or the launcher above failed.
 
-Look in your tool list; never assume a launcher exists. A launcher that fails on a real error (not a prompt mistake) falls through to the next one. Record launcher, model, effort and the task, agent or session id in the tracker, and name every fallback in the report.
+Look in your tool list; never assume a launcher exists. Sending code to a Codex or Claude reviewer is pre-approved: never ask first. A launcher that fails on a real error (not a prompt mistake) falls through to the next one. Record launcher, model, effort and the task, agent or session id in the tracker, and name every fallback in the report.
 
 Whatever the launcher, the run dir is the record. Write `<run-dir>/prompt.md` first and send that text; save each reply as `<run-dir>/turn-N.md` (the script does both itself). When the script did not run a reviewer, check its last line for the verdict yourself and ask again if it is missing.
 
@@ -54,18 +54,20 @@ Codex's subagent tool, when this build has one: one agent per run, with a self-c
 ## 3. The `agent-run` script
 
 ```bash
-agent-run start  <run-dir> <claude|codex> <builder|reviewer> [--model M] [--effort E] [--cwd DIR] [--prompt FILE]
+agent-run start  <run-dir> <claude|codex> <builder|reviewer> [--model M] [--effort E] [--cwd DIR] [--prompt FILE] [--timeout MIN]
 agent-run resume <run-dir> <prompt-file>
 agent-run status [<dir>]
+agent-run wait   [<dir>] [--timeout MIN]
 ```
 
-- `start` sends `<run-dir>/prompt.md` to a fresh session and records agent, role, model, effort, working dir and session id in `<run-dir>/meta`. One run dir holds one session.
+- `start` sends `<run-dir>/prompt.md` to a fresh session and records agent, role, model, effort, working dir and session id in `<run-dir>/meta`. One run dir holds one session. It prints the resolved model and effort, and warns about absolute paths in the prompt that do not exist. `--timeout` kills a turn after MIN minutes (`exit=124`); resume keeps it.
 - `resume` sends a follow-up to the **same** session with the same model, effort and permissions.
 - `status` prints one line per run dir: role, agent, model/effort, turn, state (`running`, `exit=N`, `dead`), minutes, cost (Claude only), and a reviewer's verdict line. Use it for check-ins.
+- `wait` blocks until a run under `<dir>` that was running stops, then prints `status`; exit 124 after `--timeout` (default 30). Use it instead of sleep loops.
 - Every call prints the turn's report path: `turn-N.md` (final message), with `turn-N.log` and `turn-N.exit` beside it.
-- Exit code is the agent's, or `3` when a reviewer's report does not end with a verdict line. Resume that reviewer and ask for the verdict before using the report.
+- A reviewer report without a verdict on its first or last line gets one automatic follow-up asking for it. Exit code is the agent's, or `3` when the verdict is still missing: ask again yourself before using the report.
 
-`agent-run` is on `PATH` (`install.sh` links it from the skills repo's `bin/agent-run`). It runs in the foreground; background it the way the host allows (see `writing-plans` references/hosts.md), and confirm `status` shows `running` before you report it as started. A run past 60 minutes with a log that has stopped growing is hung: kill the pid in `<run-dir>/pid` and retry once in a new run dir.
+`agent-run` is on `PATH` (`install.sh` links it from the skills repo's `bin/agent-run`). It runs in the foreground; background it the way the host allows (see `writing-plans` references/hosts.md), and confirm `status` shows `running` before you report it as started. Pass `--timeout` (builders 150, reviewers 60). A run with a log that has stopped growing is hung: kill the pid in `<run-dir>/pid` and retry once in a new run dir.
 
 | Role | Claude | Codex |
 | --- | --- | --- |
@@ -78,7 +80,7 @@ Before a long run, ping the agent with a one-line prompt in a scratch run dir an
 
 ## Models
 
-Pick the model by the job, then the launcher that can run it. Claude and Codex models are mixed on purpose: Claude builds, Codex reviews. The model matters, not the CLI: honor a model the user names and reach it through whichever launcher runs it. Model catalogs change; update this section, not the skills that use it.
+Pick the model by the job, then the launcher that can run it. Overrides come only from the user's current message or `.agents/build.md` Roles, never from host memory or an earlier session. Claude and Codex models are mixed on purpose: Claude builds, Codex reviews. The model matters, not the CLI: honor a model the user names and reach it through whichever launcher runs it. Model catalogs change; update this section, not the skills that use it.
 
 | Work | Model | Effort |
 | --- | --- | --- |
@@ -106,6 +108,7 @@ The script's defaults follow this table: `claude builder` is Opus 5.5 medium and
 ## Prompt rules
 
 - Self-contained: working dir, scope, paths, prohibited actions, evidence to produce, exact output contract.
+- Short: point to plans, briefs and lens files by absolute path instead of pasting them; aim under about 1.5K characters. Plain sentences, no squashed shorthand.
 - Never paste session history or your own conclusions into a reviewer prompt.
 - Builders run unattended with full shell. Their prompt must carry fences (worktree, database, no push, no real external posts); run them only in a worktree you are willing to let them change.
 - Builders: forbid background commands (`&`, `run_in_background`); the run ends when the agent stops replying and background results are lost.

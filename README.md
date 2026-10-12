@@ -18,7 +18,7 @@ writing-specs (optional) → writing-plans: plan ─review(plan)→ build ─rev
 
 | Skill | Job |
 | --- | --- |
-| `writing-plans` | Plan (slices, live proof, risk), get it reviewed, then build it as coordinator with builder and reviewer runs |
+| `writing-plans` | Plan (slices, live proof, risk), get it reviewed, build it as coordinator with builder and reviewer runs, then ship and clean up; pause, resume and status from `TRACKER.md` |
 | `review` | Review loop with triage and same-reviewer approval; lenses: plan, code, delivery |
 | `agent-run` | Models by job and the launch order for builder, reviewer and helper runs |
 | `writing-specs` | Lasting product (PRD) and design (TDD) docs in `docs/` |
@@ -41,7 +41,7 @@ Each run uses the first launcher that can run its model:
 
 1. T3 `delegate_task`, when the session is a T3 Code thread and has the tool.
 2. The host's own subagent tool, for a model of the host's family (Claude Code's `Agent` tool for Claude models, Codex's subagent tool for GPT models).
-3. `bin/agent-run`, the script, for everything else. It runs Claude or Codex as builder or reviewer, resumable by session, and picks the model from the agent and role you pass. Override with `--model` and `--effort`, or with `AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL`.
+3. `bin/agent-run`, the script, for everything else. It runs Claude or Codex as builder or reviewer, resumable by session, and picks the model from the agent and role you pass. Override with `--model` and `--effort`, or with `AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL`. `--timeout` caps a turn and `agent-run wait` blocks until a run stops.
 
 The two sets differ only in the host subagent section and host notes. When you change shared wording (review lenses, plan contract, templates, specs), change both sets.
 
