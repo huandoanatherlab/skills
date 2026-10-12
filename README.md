@@ -1,6 +1,6 @@
 # Skills
 
-Plan, build and review skills, with one set for Claude Code and one for Codex. Both sets mix the two families the same way: Claude models build, a Codex model reviews.
+Plan, build, review and debug skills, with one set for Claude Code and one for Codex. Both sets mix the two families the same way: Claude models build, a Codex model reviews.
 
 ```bash
 ./install.sh --dry-run
@@ -22,6 +22,7 @@ writing-specs (optional) → writing-plans: plan ─review(plan)→ build ─rev
 | `review` | Review loop with triage and same-reviewer approval; lenses: plan, code, delivery |
 | `agent-run` | Models by job and the launch order for builder, reviewer and helper runs |
 | `writing-specs` | Lasting product (PRD) and design (TDD) docs in `docs/` |
+| `systematic-debugging` | Evidence-driven debugging in Quick, Standard or Deep mode; hands large fixes to `writing-plans` and finished fixes to `review` |
 
 ## Models
 
