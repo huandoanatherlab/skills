@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Plan and build a multi-step code change: write an evidence-grounded plan, get it reviewed, then build it slice by slice with Claude builders and Codex reviewers; also pause, resume or report progress on such a build.
+description: Plan and build a multi-step code change: write an evidence-grounded plan, get it reviewed, then build it slice by slice with Claude builders and Codex reviewers; also pause, resume or report progress on such a build. Use whenever asked to implement, execute or "thực thi / triển khai" a change that spans several files or touches a migration, a contract or permissions, including when the request arrives mid-thread.
 ---
 
 # Writing Plans
@@ -54,17 +54,19 @@ Choose a mode per slice:
 
 The roles in `.agents/build.md` override these defaults; the user's current message overrides both.
 
+**Small build:** a plan of one or two `normal`-risk slices built inline skips the Finish whole-diff review and delivery audit; `TRACKER.md` keeps only its header and slice table, and the report goes in your final message. Never skipped: a plan with Review Status `approved` before the first code edit (a pending verify round is not approval), `triage-N.md`, and a reviewer from the other family.
+
 ## Each slice
 
 1. **Build.** Write `build/runs/<slice>/prompt.md` ("Read briefs/COMMON.md first", slice ID, named tests, extra fences), then launch the builder with it (script form: `agent-run start build/runs/<slice> claude builder --cwd <worktree>`, in the background). Before any launch, check `TRACKER.md` and `task_status`/`agent-run status` so the slice has no live run already. Log launcher and id in `TRACKER.md`, and write the next slice's prompt while it runs.
 2. **Check the claim.** Read the whole diff and re-run the slice's named tests and focused gates. A builder's report is a claim, not evidence. If the builder exited without committing (usually a forbidden background job), resume it with the rule restated. A failure is pre-existing only if the same test fails on the base commit.
 3. **Review** with the `review` loop, code lens: confirm `git diff --stat <base>..HEAD` in the worktree is not empty, render `briefs/REVIEW.md` into `build/runs/<slice>-review/prompt.md`, launch the reviewer with it (script form: `agent-run start build/runs/<slice>-review codex reviewer --cwd <worktree>`), and follow `review` for triage and same-reviewer validation. You are the fix owner: send accepted fixes back to the same builder (the launcher's follow-up in `agent-run`).
 4. **Live proof** at the slice's level ([references/project.md](references/project.md)), between builds, never while a builder edits a watched dev server.
-5. **Record** commits, round count, verdict and evidence in `TRACKER.md`. When the user is present, post one line (slice, verdict, what is next). Then launch the next slice at once; answering a question mid-run never ends the turn.
+5. **Record** commits, round count, verdict and evidence in `TRACKER.md`. When the user is present, post one line (slice, verdict, what is next). Then launch the next slice at once; answering a question mid-run never ends the turn. A question of yours never blocks work that does not depend on it: ask in plain text or log it in `QUESTIONS.md` with your recommended default, keep processing finished runs and launching independent slices, and use a blocking question tool only when nothing else can move.
 
 A slice is done when its review loop is complete, its live proof passed, and its commits are in `TRACKER.md`.
 
-**Too big:** a builder run well past the plan's 90-minute target (about 2 hours), or a review with more than 5 P0-P2 findings, means the slice is too big. Stop it at a commit and split the rest into sub-slices with their own IDs in `TRACKER.md`, in parallel where files allow.
+**Too big:** a builder run well past the plan's 90-minute target (about 2 hours), or a review with more than 5 P0-P2 findings, means the slice is too big. Stop it at a commit and split the rest into sub-slices with their own IDs in `TRACKER.md`, in parallel where files allow. Check a builder once at about 90 minutes (`task_status` or `agent-run status`) so this rule is applied while it still saves time.
 
 Run slices in parallel only when files, state and contracts do not overlap: one worktree each (and one database each when tests write data), at most 3 builders and 6 agent runs at once. At each milestone merge the slice branches in dependency order into the build branch, run the full gates on the merged HEAD before anything moves to the base branch, then remove the merged worktrees and branches and record it.
 
@@ -85,11 +87,11 @@ Run slices in parallel only when files, state and contracts do not overlap: one 
 4. **Acceptance audit** with `review`, delivery lens, by a fresh `gpt-6.1-sol` reviewer; fix what it finds and repeat that slice's review.
 5. **Report** in `build/FINAL-REPORT.md`: commit range and deploy order, migration commands per environment, slices with models, verdicts, rejected findings with reasons, deviations, live results with evidence paths, failed or skipped gates, a short manual QA guide, open questions, delivery verdict. Never hide a failure behind "tests pass".
 6. **Ship** per `.agents/build.md` Git: commit any leftovers in logical groups, push and open a PR to the base branch with the report summary and evidence images, or merge if that is the project's flow. Without a Git section or prior authority, ask once.
-7. **Clean up** everything under Resources in `TRACKER.md`: stop dev servers, browsers, background waits and processes you started; cancel live T3 tasks; drop temporary databases and containers; remove merged worktrees and branches, build output and unused volumes; in `<scratch>/<topic>` keep `plan.md` and `build/FINAL-REPORT.md`. Never touch other agents' worktrees. List anything kept in the report.
+7. **Clean up** everything under Resources in `TRACKER.md`: stop dev servers, browsers, background waits and processes you started; cancel live T3 tasks; drop temporary databases and containers; remove merged worktrees and branches, build output and unused volumes; in `<scratch>/<topic>` keep `plan.md` and `build/FINAL-REPORT.md`. Before removing a worktree, end every process and agent session whose working directory is inside it; on `Directory not empty` or `Permission denied`, find and stop the holder instead of retrying the delete. Never touch other agents' worktrees. List anything kept in the report.
 
 ## Pause, resume, status
 
-- **Pause** ("tạm dừng", handoff, context near full): finish or stop the current launch, then update the top of `TRACKER.md` (Now, Progress, live runs, next action) so a fresh session needs nothing else.
+- **Pause** ("tạm dừng", handoff, context near full): stop builders at a commit, let read-only reviewers finish and list their ids under live runs so resume picks up the result instead of relaunching, then update the top of `TRACKER.md` (Now, Progress, live runs, next action) so a fresh session needs nothing else.
 - **Resume** ("tiếp tục", a new session or machine): find the newest `<scratch>/*/build/TRACKER.md` in the main checkout. Reconcile it with `git worktree list`, branches, `task_status`/`agent-run status`, and commits on each slice branch; fix the tracker where it is stale. Report progress in one line, then continue from Now without relaunching anything that is still running.
 - **Status** ("tiến độ", "bao nhiêu %"): slices complete over total and percent, slices built but not reviewed, what is running and for how long, other plans under `<scratch>/`.
 

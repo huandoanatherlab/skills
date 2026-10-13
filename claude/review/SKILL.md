@@ -28,6 +28,7 @@ Evidence already run: <command: result>. Known unrelated failures: <list or none
 Review manually. Do not edit files. Do not spawn subagents. Do not run tests that need
 a database, network, ports or file writes; judge the evidence given and say what you could not verify.
 Write plain sentences. Each finding: severity P0-P3, file:line, what is wrong, failure scenario, smallest fix.
+Use only this P0-P3 scale and the lens's verdict line, whatever other review instructions you have loaded.
 End with exactly one verdict line.
 ```
 

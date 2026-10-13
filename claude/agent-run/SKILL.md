@@ -7,6 +7,8 @@ description: Launch a separate builder, reviewer or helper agent with a chosen m
 
 How to launch every builder, reviewer and helper run. The launcher only carries prompts; the calling skill owns the task contract, review lens, triage and completion state.
 
+This skill carries no review or build rules. Launching a reviewer: load `review` first and use its prompt template, severity scale and stop rule, never your own. Running a build loop (builder, reviewer, fixes): load `writing-plans` too.
+
 ## Launch order
 
 Use the first launcher that can run the model you need:
@@ -32,8 +34,10 @@ Known-good review call:
 | `clientRequestId` | `<topic>-<slice>-review-1`, unique per call |
 
 - For a Claude run (the builder, a fallback reviewer), use the Claude provider instance the tool lists with that run's model and effort, and take a builder's `role` from the tool's schema. If T3 cannot give the builder write access to the worktree, use the next launcher.
-- `async` returns at once: end the turn or write the next prompt, and the result wakes the thread.
-- **Follow-up:** a new `delegate_task` with the same target, never a message to the child thread. Its prompt carries what a resumed session would remember: the original prompt, the earlier findings or report, your triage and the fix commits. Use `clientRequestId` `<topic>-<slice>-verify-N` or `-fix-N`.
+- `async` returns at once: end the turn or write the next prompt, and the result wakes the thread. Never `mode: wait`: a real review outlasts its timeout and leaves you polling.
+- **Verdict:** read it from the last message of the child thread (`t3_thread_read`), never from the `task_status` summary, which can be the reviewer's first sentence.
+- **Working dir:** the child runs in this thread's checkout; the tool has no field for another one. When the change sits in a different worktree, name it by absolute path, point a reviewer at `git -C <worktree> diff` and the evidence already run, and never ask it to run tests there: its sandbox cannot write outside its own checkout.
+- **Follow-up:** a new `delegate_task` with the same target, never a message to the child thread. Its prompt carries what a resumed session would remember: the original prompt, the earlier findings or report, your triage and the fix commits. Name the files the fixes touch and tell a reviewer to read only those. Use `clientRequestId` `<topic>-<slice>-verify-N` or `-fix-N`.
 - **Stuck:** no result after 60 minutes: check `task_status`, `task_cancel` a stuck run and retry once. Fall through after a second failure.
 
 ## 2. Host subagent (Claude Code)
@@ -83,7 +87,7 @@ Before a long run, ping the agent with a one-line prompt in a scratch run dir an
 
 ## Models
 
-Pick the model by the job, then the launcher that can run it. Overrides come only from the user's current message or `.agents/build.md` Roles, never from host memory or an earlier session. Claude and Codex models are mixed on purpose: Claude builds, Codex reviews. The model matters, not the CLI: honor a model the user names and reach it through whichever launcher runs it. Model catalogs change; update this section, not the skills that use it.
+Pick the model by the job, then the launcher that can run it. Overrides come only from the user's current message or `.agents/build.md` Roles, never from host memory or an earlier session. A model the user named for an earlier task does not carry over to the next one. Claude and Codex models are mixed on purpose: Claude builds, Codex reviews. The model matters, not the CLI: honor a model the user names and reach it through whichever launcher runs it. Model catalogs change; update this section, not the skills that use it.
 
 | Work | Model | Effort |
 | --- | --- | --- |
@@ -103,7 +107,7 @@ The script's defaults follow this table: `claude builder` is Opus 5.5 medium and
 - **The reviewer is from the other family than the author.** Claude-written work (the default builder, or you on Claude Code) goes to `gpt-6.1-sol` at high. GPT-written work (a Codex builder the user asked for, or you on Codex) goes to Opus 5.5 at high.
 - Same-reviewer validation goes back to the same reviewer: a message to the same agent, `agent-run resume` on the same run dir, or under T3 a new task with the same target and the earlier findings in its prompt.
 - A fresh reviewer is a new task, agent or run dir, with a complete prompt.
-- **Codex down, or at capacity twice:** review with Opus 5.5 at high in a fresh context.
+- **Codex down, or at capacity twice** (wait about 10 minutes before the second try): review with Opus 5.5 at high in a fresh context. Mid-loop it takes over the earlier findings and validates only those, under `review` step 4; it is not a fresh review. Say in the report that the approval came from the author's family.
 - Fallbacks stay within Claude and Codex. Never reach for another provider or CLI.
 - **Claude down:** `gpt-6.1-sol` at medium builds, and the reviewer is a fresh `gpt-6.1-sol` run at high.
 - Say which model reviewed and which built whenever it is not the default.
@@ -114,4 +118,4 @@ The script's defaults follow this table: `claude builder` is Opus 5.5 medium and
 - Short: point to plans, briefs and lens files by absolute path instead of pasting them; aim under about 1.5K characters. Plain sentences, no squashed shorthand.
 - Never paste session history or your own conclusions into a reviewer prompt.
 - Builders run unattended with full shell. Their prompt must carry fences (worktree, database, no push, no real external posts); run them only in a worktree you are willing to let them change.
-- Builders: forbid background commands (`&`, `run_in_background`); the run ends when the agent stops replying and background results are lost.
+- Builders: forbid background commands (`&`, `run_in_background`); the run ends when the agent stops replying and background results are lost. A command too long for one tool call is split by file, shard or filter, never backgrounded.
