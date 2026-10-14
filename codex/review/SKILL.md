@@ -19,7 +19,7 @@ When you are asked to review directly (you are the reviewer), read the lens file
 
 **Inputs:** target and paths, lens, acceptance criteria, fix owner, evidence already run, known unrelated failures, and risk (`risky` as defined in `writing-plans` references/plan-contract.md). Acceptance criteria and known failures are required; write "none" rather than leave them out. For code, confirm the target tree contains the change (`git diff --stat` is not empty) before launching.
 
-**Reviewer:** from the other family than the author: Codex `gpt-6.1-sol` at high for Claude-written work, Opus 5.5 at high for GPT-written work (`agent-run`, Pairing). Launch it the way the `agent-run` skill says: T3 `delegate_task` when the tool is there, else the host's subagent tool when it can run that model, else `agent-run start <run-dir> <codex|claude> reviewer`. Say which model and launcher ran. Its prompt is self-contained, never your session history or conclusions. Point to files by path instead of pasting them:
+**Reviewer:** from the other family than the author: Codex `gpt-6.1-sol` at high for Claude-written work, Opus 5.5 at high for GPT-written work (`agent-run`, Pairing). Launch it the way the `agent-run` skill says: T3 `delegate_task` when the tool is there, else the host's subagent tool when it can run that model, else `agent-run start <run-dir> <codex|claude> reviewer`. Under T3 it runs with `runtimeMode: auto`, never `full-access`, and its prompt says "do not edit files". Say which model and launcher ran. Its prompt is self-contained, never your session history or conclusions. Point to files by path instead of pasting them:
 
 ```text
 Review <target> with the <lens> lens: read <absolute path to the lens file> first.
@@ -46,7 +46,7 @@ End with exactly one verdict line.
 
 **Done** when the owning reviewer passes its own findings (a rejection the user accepted counts as closed), plus a fresh first-pass approval when step 6 applies. No further clean-pass rounds.
 
-**Escalate** instead of looping: a reviewer insists on a rejected finding twice, three verify rounds pass without approval, six reviewer turns on one target in total (count them in the tracker so the limit survives a handoff), or a reviewer fails three times (then replace it, hand over the old findings, and never claim it approved). Ask the user, or log it in `QUESTIONS.md` when unattended. A reviewer that cannot run at all (model at capacity, provider unavailable) is replaced on the first such error instead of retried: start another model of the same family with its earlier findings, and report it as a replacement.
+**Escalate** instead of looping: a reviewer insists on a rejected finding twice, three verify rounds pass without approval, six reviewer turns on one target in total (count them in the tracker so the limit survives a handoff), or a reviewer fails three times (then replace it, hand over the old findings, and never claim it approved). Ask the user, or log it in `QUESTIONS.md` when unattended. A reviewer that cannot run at all (model at capacity, provider unavailable) is replaced on the first such error instead of retried: start another model of the same family (`gpt-6-sol` for `gpt-6.1-sol`) with its earlier findings, and report it as a replacement.
 
 A user stop is `stopped-with-open-findings`, never approval.
 

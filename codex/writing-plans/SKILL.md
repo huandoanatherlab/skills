@@ -49,7 +49,7 @@ Requires a plan with Review Status `approved` and no open architecture decision.
 
 Choose a mode per slice:
 
-- **cross** (default): Opus 5.5 builder at medium and Codex `gpt-6.1-sol` reviewer at high, each a separate run.
+- **cross** (default): Sonnet 5.5 builder at medium (Opus 5.5 for a heavy slice, per `agent-run`) and Codex `gpt-6.1-sol` reviewer at high, each a separate run.
 - **inline**: tiny or tightly coupled slices sharing files. You build and commit; the reviewer is still a separate run, from the other family than you.
 
 The roles in `.agents/build.md` override these defaults; the user's current message overrides both.
@@ -97,4 +97,4 @@ Run slices in parallel only when files, state and contracts do not overlap: one 
 
 ## Unattended
 
-When the user is away and said to continue: fix bugs, log clear-value design changes, cut machinery, and put everything else in `QUESTIONS.md` with your recommendation. A provider error (429, 503, capacity) is not a stop: wait, retry, fall through per `agent-run`, and keep going. Check-ins are one line: what runs, which model, how long, where the evidence is. Report only failures and the end, not "still running". Before your context runs out, pause and hand off to a fresh session.
+When the user is away and said to continue: fix bugs, log clear-value design changes, cut machinery, and put everything else in `QUESTIONS.md` with your recommendation. A provider error (429, 503, capacity) is not a stop: replace the model or fall through per `agent-run`, and keep going. Check-ins are one line: what runs, which model, how long, where the evidence is. Report only failures and the end, not "still running". Before your context runs out, pause and hand off to a fresh session.

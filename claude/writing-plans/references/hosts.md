@@ -6,4 +6,4 @@
 - **Waiting:** T3 tasks and `Agent` runs notify you when they end. Start the script with the Bash tool's `run_in_background`; it notifies too. Do not poll with sleep loops. For long runs, one fallback wake (`ScheduleWakeup`) no more often than every 20 minutes, cancelled when the run ends.
 - **Ledger:** mirror slice states in the todo tracker; `TRACKER.md` stays the source of truth. Never keep build state in memory files.
 - **Handoff:** pause first (`writing-plans`); then a fresh T3 thread when in T3, otherwise a fresh session; either resumes from `TRACKER.md`.
-- **Defaults:** builder Opus 5.5 medium, reviewer Codex `gpt-6.1-sol` high.
+- **Defaults:** builder Sonnet 5.5 medium (Opus 5.5 medium for a heavy slice), reviewer Codex `gpt-6.1-sol` high.

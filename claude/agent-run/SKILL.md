@@ -33,6 +33,7 @@ Known-good review call:
 | `runtimeMode` | `auto` |
 | `clientRequestId` | `<topic>-<slice>-review-1`, unique per call |
 
+- A reviewer runs with `runtimeMode: auto` and its prompt says "do not edit files". Never `full-access` for a reviewer.
 - For a Claude run (the builder, a fallback reviewer), use the Claude provider instance the tool lists with that run's model and effort, and take a builder's `role` from the tool's schema. If T3 cannot give the builder write access to the worktree, use the next launcher.
 - `async` returns at once: end the turn or write the next prompt, and the result wakes the thread. Never `mode: wait`: a real review outlasts its timeout and leaves you polling.
 - **Verdict:** read it from the last message of the child thread (`t3_thread_read`), never from the `task_status` summary, which can be the reviewer's first sentence.
@@ -46,11 +47,12 @@ The `Agent` tool: one named agent per run, with a self-contained prompt, never a
 
 | Run | `model` | `effort` |
 | --- | --- | --- |
-| builder | `opus` | `medium` |
+| builder, small fixes | `sonnet` | `medium` |
+| heavy builder (see Models) | `opus` | `medium` |
 | reviewer of GPT-written work, or when Codex is down | `opus` | `high` |
 | long live-test plan | `opus` | `medium` |
 | code mapping, inventories | `sonnet` | `low` |
-| lookup | `haiku` | leave unset |
+| lookup, reading or editing docs | `haiku` | leave unset |
 
 - It runs in the background and notifies you when it ends. Do not poll.
 - **Follow-up:** `SendMessage` to the same named agent, so the builder who wrote the code gets the findings and the reviewer who raised them checks the fixes.
@@ -91,25 +93,30 @@ Pick the model by the job, then the launcher that can run it. Overrides come onl
 
 | Work | Model | Effort |
 | --- | --- | --- |
-| Lookups: find a file, list callers | Haiku 5.5 (`claude-haiku-5-5`) | default |
-| Code mapping, inventories, mechanical edits | Sonnet 5.5 (`claude-sonnet-5-5`) | low |
-| Implementation (builder) | Opus 5.5 (`claude-opus-5-5`) | medium |
+| Lookups and simple tasks: find a file, list callers, read or edit docs | Haiku 5.5 (`claude-haiku-5-5`) | unset, no thinking |
+| Code mapping, inventories | Sonnet 5.5 (`claude-sonnet-5-5`) | low |
+| Implementation and small fixes (builder) | Sonnet 5.5 (`claude-sonnet-5-5`) | medium |
+| Heavy implementation (heavy builder) | Opus 5.5 (`claude-opus-5-5`) | medium |
 | Plan, code and delivery review (reviewer) | Codex `gpt-6.1-sol` | high, read-only |
+| Reviewer when `gpt-6.1-sol` is at capacity | Codex `gpt-6-sol` | high, read-only |
 | A long live-test plan | Opus 5.5 (`claude-opus-5-5`) | medium |
 | Exceptional hard reasoning | Opus 5.5 (`claude-opus-5-5`) | xhigh, only when justified |
 
-Design, review triage, small fixes and short live checks stay with you, the coordinator.
+**Sonnet or Opus builder:** Sonnet 5.5 by default. Use Opus 5.5 when the slice changes more than one package or a shared contract, has tricky logic (concurrency, migrations, permissions, money), or a Sonnet builder already failed it (a fix round that did not fix it, a bug it could not find). Note the reason in the tracker.
 
-The script's defaults follow this table: `claude builder` is Opus 5.5 medium and `codex reviewer` is `gpt-6.1-sol` high; the swapped pair is `codex builder` `gpt-6.1-sol` medium and `claude reviewer` Opus 5.5 high. Override with `--model` and `--effort`, or `AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL`.
+Design, review triage and short live checks stay with you, the coordinator. So do small fixes quicker to make than to brief; otherwise they go to a Sonnet builder.
+
+The script's defaults follow this table: `claude builder` is Sonnet 5.5 medium (pass `--model claude-opus-5-5` for a heavy builder) and `codex reviewer` is `gpt-6.1-sol` high; the swapped pair is `codex builder` `gpt-6.1-sol` medium and `claude reviewer` Opus 5.5 high. Override with `--model` and `--effort`, or `AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL`.
 
 ### Pairing
 
 - **The reviewer is from the other family than the author.** Claude-written work (the default builder, or you on Claude Code) goes to `gpt-6.1-sol` at high. GPT-written work (a Codex builder the user asked for, or you on Codex) goes to Opus 5.5 at high.
 - Same-reviewer validation goes back to the same reviewer: a message to the same agent, `agent-run resume` on the same run dir, or under T3 a new task with the same target and the earlier findings in its prompt.
 - A fresh reviewer is a new task, agent or run dir, with a complete prompt.
-- **Codex down, or at capacity twice** (wait about 10 minutes before the second try): review with Opus 5.5 at high in a fresh context. Mid-loop it takes over the earlier findings and validates only those, under `review` step 4; it is not a fresh review. Say in the report that the approval came from the author's family.
+- **Reviewer model at capacity:** replace it on the first such error, no wait and no retry (`review`, Escalate): `gpt-6.1-sol` gives way to `gpt-6-sol` at high. Mid-loop the replacement takes over the earlier findings and validates only those, under `review` step 4; it is not a fresh review.
+- **Codex down** (every GPT model fails, `gpt-6-sol` included): review with Opus 5.5 at high in a fresh context, taking over the earlier findings the same way. Say in the report that the approval came from the author's family.
 - Fallbacks stay within Claude and Codex. Never reach for another provider or CLI.
-- **Claude down:** `gpt-6.1-sol` at medium builds, and the reviewer is a fresh `gpt-6.1-sol` run at high.
+- **Claude down** (Sonnet and Opus both fail): `gpt-6.1-sol` at medium builds, and the reviewer is a fresh `gpt-6.1-sol` run at high.
 - Say which model reviewed and which built whenever it is not the default.
 
 ## Prompt rules

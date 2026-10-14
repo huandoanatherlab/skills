@@ -28,12 +28,14 @@ writing-specs (optional) → writing-plans: plan ─review(plan)→ build ─rev
 
 | Work | Model | Effort |
 | --- | --- | --- |
-| Lookups | `claude-haiku-5-5` | default |
-| Code mapping, mechanical edits | `claude-sonnet-5-5` | low |
-| Builder | `claude-opus-5-5` | medium |
+| Lookups, reading or editing docs | `claude-haiku-5-5` | unset, no thinking |
+| Code mapping | `claude-sonnet-5-5` | low |
+| Builder, small fixes | `claude-sonnet-5-5` | medium |
+| Heavy builder (cross-package, tricky logic, Sonnet failed) | `claude-opus-5-5` | medium |
 | Reviewer | Codex `gpt-6.1-sol` | high, read-only |
+| Reviewer at capacity | Codex `gpt-6-sol` | high, read-only |
 
-Design, review triage and small fixes stay with the coordinator. The reviewer is always from the other family than the author, so GPT-written work goes to `claude-opus-5-5` at high. The full table and the fallbacks are in each set's `agent-run/SKILL.md`.
+Design, review triage and short live checks stay with the coordinator. The reviewer is always from the other family than the author, so GPT-written work goes to `claude-opus-5-5` at high. The full table and the fallbacks are in each set's `agent-run/SKILL.md`.
 
 ## Launching a run
 
