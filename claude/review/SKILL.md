@@ -46,7 +46,7 @@ End with exactly one verdict line.
 
 **Done** when the owning reviewer passes its own findings (a rejection the user accepted counts as closed), plus a fresh first-pass approval when step 6 applies. No further clean-pass rounds.
 
-**Escalate** instead of looping: a reviewer insists on a rejected finding twice, three verify rounds pass without approval, six reviewer turns on one target in total (count them in the tracker so the limit survives a handoff), or a reviewer fails three times (then replace it, hand over the old findings, and never claim it approved). Ask the user, or log it in `QUESTIONS.md` when unattended.
+**Escalate** instead of looping: a reviewer insists on a rejected finding twice, three verify rounds pass without approval, six reviewer turns on one target in total (count them in the tracker so the limit survives a handoff), or a reviewer fails three times (then replace it, hand over the old findings, and never claim it approved). Ask the user, or log it in `QUESTIONS.md` when unattended. A reviewer that cannot run at all (model at capacity, provider unavailable) is replaced on the first such error instead of retried: start another model of the same family with its earlier findings, and report it as a replacement.
 
 A user stop is `stopped-with-open-findings`, never approval.
 
