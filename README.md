@@ -1,6 +1,6 @@
 # Skills
 
-Plan, build, review and debug skills, with one set for Claude Code and one for Codex. Both sets mix the two families the same way: Claude models build, a Codex model reviews.
+Plan, build, review and debug skills, with one set for Claude Code and one for Codex. Both sets run every builder, reviewer and helper on a Claude model; a GPT model runs only when the user names one.
 
 ```bash
 ./install.sh --dry-run
@@ -32,10 +32,11 @@ writing-specs (optional) → writing-plans: plan ─review(plan)→ build ─rev
 | Code mapping | `claude-sonnet-5-5` | low |
 | Builder, small fixes | `claude-sonnet-5-5` | medium |
 | Heavy builder (cross-package, tricky logic, Sonnet failed) | `claude-opus-5-5` | medium |
-| Reviewer | Codex `gpt-6.1-sol` | high, read-only |
-| Reviewer at capacity | Codex `gpt-6-sol` | high, read-only |
+| Reviewer, simple target (docs, config, short plan, small normal-risk diff) | `claude-haiku-5-5` | high, read-only |
+| Reviewer, medium target (normal code slice, feature plan) | `claude-opus-5-5` | medium, read-only |
+| Reviewer, complex target (risky slice, milestone plan, whole-diff, delivery audit) | `claude-opus-5-5` | high, read-only |
 
-Design, review triage and short live checks stay with the coordinator. The reviewer is always from the other family than the author, so GPT-written work goes to `claude-opus-5-5` at high. The full table and the fallbacks are in each set's `agent-run/SKILL.md`.
+Design, review triage and short live checks stay with the coordinator. The reviewer is always a separate run in a fresh context. There is no fallback model: a run that fails on capacity or a usage limit is retried once on the same model, then waits for the user. The full table is in each set's `agent-run/SKILL.md`.
 
 ## Launching a run
 

@@ -17,7 +17,7 @@ Use the first launcher that can run the model you need:
 2. **The host's subagent tool**, when the model is from the host's family: Claude models from Claude Code, GPT models from Codex.
 3. **The `agent-run` script**, for everything else: the model is from the other family, the host has no subagent tool, or the launcher above failed.
 
-Look in your tool list; never assume a launcher exists. Sending code to a Codex or Claude reviewer is pre-approved: never ask first. A launcher that fails on a real error (not a prompt mistake) falls through to the next one. Record launcher, model, effort and the task, agent or session id in the tracker, and name every fallback in the report.
+Look in your tool list; never assume a launcher exists. Sending code to a reviewer is pre-approved: never ask first. A launcher that fails on a real error (not a prompt mistake) falls through to the next one. Record launcher, model, effort and the task, agent or session id in the tracker, and name every fallback in the report.
 
 Whatever the launcher, the run dir is the record. Write `<run-dir>/prompt.md` first and send that text; save each reply as `<run-dir>/turn-N.md` (the script does both itself). When the script did not run a reviewer, check its last line for the verdict yourself and ask again if it is missing.
 
@@ -27,14 +27,14 @@ Known-good review call:
 
 | Field | Value |
 | --- | --- |
-| target | `providerInstanceId: codex`, `model: gpt-6.1-sol`, option `reasoningEffort: high` |
+| target | the Claude provider instance the tool lists (`claudeAgent`), the reviewer tier's model, option `effort` (Models): `claude-opus-5-5` + `high` for a complex target |
 | `role` | `review` |
 | `mode` | `async` |
 | `runtimeMode` | `auto` |
 | `clientRequestId` | `<topic>-<slice>-review-1`, unique per call |
 
 - A reviewer runs with `runtimeMode: auto` and its prompt says "do not edit files". Never `full-access` for a reviewer.
-- For a Claude run (the builder, a fallback reviewer), use the Claude provider instance the tool lists with that run's model and effort, and take a builder's `role` from the tool's schema. If T3 cannot give the builder write access to the worktree, use the next launcher.
+- For a builder or helper, use the same Claude provider instance with that run's model and effort, and take a builder's `role` from the tool's schema. If T3 cannot give the builder write access to the worktree, use the next launcher.
 - `async` returns at once: end the turn or write the next prompt, and the result wakes the thread. Never `mode: wait`: a real review outlasts its timeout and leaves you polling.
 - **Verdict:** read it from the last message of the child thread (`t3_thread_read`), never from the `task_status` summary, which can be the reviewer's first sentence.
 - **Working dir:** the child runs in this thread's checkout; the tool has no field for another one. When the change sits in a different worktree, name it by absolute path, point a reviewer at `git -C <worktree> diff` and the evidence already run, and never ask it to run tests there: its sandbox cannot write outside its own checkout.
@@ -47,15 +47,13 @@ Codex's subagent tool, when this build has one: one agent per run, with a self-c
 
 | Run | Model | Reasoning effort |
 | --- | --- | --- |
-| reviewer | `gpt-6.1-sol` | `high` |
-| reviewer, when `gpt-6.1-sol` is at capacity | `gpt-6-sol` | `high` |
-| builder, when the user asks for a Codex builder or Claude is down | `gpt-6.1-sol` | `medium` |
+| builder or reviewer, only when the user names a GPT model for it | that model | as the user says, else `medium` (builder) or `high` (reviewer) |
 
 - **Follow-up:** message the same agent when the tool allows it, so the builder who wrote the code gets the findings and the reviewer who raised them checks the fixes. Otherwise start a new agent with the same model and the earlier prompt, findings, triage and fix commits.
 - Permissions come from your session, not from the role. A reviewer's prompt must say "do not edit files"; a builder's prompt names its worktree by absolute path.
 - If the tool cannot set the model or effort and they matter, use the script.
-- It runs GPT models only. The default builder is a Claude model: without T3, launch it with the script (`agent-run start … claude builder`).
-- Lookups and code mapping from Codex: do them yourself or with a `gpt-6.1-sol` subagent at low effort. Starting Haiku or Sonnet through the script costs more than it saves.
+- It runs GPT models only. Builders and reviewers are Claude models by default: without T3, launch them with the script (`agent-run start … claude builder|reviewer`).
+- Lookups and code mapping from Codex: do them yourself, or launch Haiku 5.5 or Sonnet 5.5 at low through the script.
 
 ## 3. The `agent-run` script
 
@@ -86,7 +84,7 @@ Before a long run, ping the agent with a one-line prompt in a scratch run dir an
 
 ## Models
 
-Pick the model by the job, then the launcher that can run it. Overrides come only from the user's current message or `.agents/build.md` Roles, never from host memory or an earlier session. A model the user named for an earlier task does not carry over to the next one. Claude and Codex models are mixed on purpose: Claude builds, Codex reviews. The model matters, not the CLI: honor a model the user names and reach it through whichever launcher runs it. Model catalogs change; update this section, not the skills that use it.
+Pick the model by the job, then the launcher that can run it. Overrides come only from the user's current message or `.agents/build.md` Roles, never from host memory or an earlier session. A model the user named for an earlier task does not carry over to the next one. Every run uses a Claude model: Claude builds and Claude reviews. A GPT model runs only when the user names one for that task. The model matters, not the CLI: honor a model the user names and reach it through whichever launcher runs it. Model catalogs change; update this section, not the skills that use it.
 
 | Work | Model | Effort |
 | --- | --- | --- |
@@ -94,26 +92,26 @@ Pick the model by the job, then the launcher that can run it. Overrides come onl
 | Code mapping, inventories | Sonnet 5.5 (`claude-sonnet-5-5`) | low |
 | Implementation and small fixes (builder) | Sonnet 5.5 (`claude-sonnet-5-5`) | medium |
 | Heavy implementation (heavy builder) | Opus 5.5 (`claude-opus-5-5`) | medium |
-| Plan, code and delivery review (reviewer) | Codex `gpt-6.1-sol` | high, read-only |
-| Reviewer when `gpt-6.1-sol` is at capacity | Codex `gpt-6-sol` | high, read-only |
+| Review of a simple target: docs, config, a short plan, a small `normal`-risk diff in one package | Haiku 5.5 (`claude-haiku-5-5`) | high, read-only |
+| Review of a medium target: a `normal`-risk code slice, a feature plan | Opus 5.5 (`claude-opus-5-5`) | medium, read-only |
+| Review of a complex target: a `risky` slice (migration, shared contract, permissions, concurrency, money, more than one package), a milestone plan, the whole-diff review, the delivery audit | Opus 5.5 (`claude-opus-5-5`) | high, read-only |
 | A long live-test plan | Opus 5.5 (`claude-opus-5-5`) | medium |
 | Exceptional hard reasoning | Opus 5.5 (`claude-opus-5-5`) | xhigh, only when justified |
 
 **Sonnet or Opus builder:** Sonnet 5.5 by default. Use Opus 5.5 when the slice changes more than one package or a shared contract, has tricky logic (concurrency, migrations, permissions, money), or a Sonnet builder already failed it (a fix round that did not fix it, a bug it could not find). Note the reason in the tracker.
 
+**Reviewer tier:** pick it when you launch the first review of a target and record it in the tracker; its verify rounds keep the same model. When unsure, take the higher tier.
+
 Design, review triage and short live checks stay with you, the coordinator. So do small fixes quicker to make than to brief; otherwise they go to a Sonnet builder.
 
-The script's defaults follow this table: `claude builder` is Sonnet 5.5 medium (pass `--model claude-opus-5-5` for a heavy builder) and `codex reviewer` is `gpt-6.1-sol` high; the swapped pair is `codex builder` `gpt-6.1-sol` medium and `claude reviewer` Opus 5.5 high. Override with `--model` and `--effort`, or `AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL`.
+The script's defaults follow this table: `claude builder` is Sonnet 5.5 medium (pass `--model claude-opus-5-5` for a heavy builder) and `claude reviewer` is Opus 5.5 high (pass `--effort medium` for a medium target, `--model claude-haiku-5-5` for a simple one). `codex` runs only for a GPT model the user named (`gpt-6.1-sol` by default). Override with `--model` and `--effort`, or `AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL`.
 
 ### Pairing
 
-- **The reviewer is from the other family than the author.** Claude-written work (the default builder, or you on Claude Code) goes to `gpt-6.1-sol` at high. GPT-written work (a Codex builder the user asked for, or you on Codex) goes to Opus 5.5 at high.
+- **The reviewer is a separate run in a fresh context**, never the builder's session and never you. Its model comes from the reviewer tier, not from the author's model.
 - Same-reviewer validation goes back to the same reviewer: a message to the same agent, `agent-run resume` on the same run dir, or under T3 a new task with the same target and the earlier findings in its prompt.
 - A fresh reviewer is a new task, agent or run dir, with a complete prompt.
-- **Reviewer model at capacity:** replace it on the first such error, no wait and no retry (`review`, Escalate): `gpt-6.1-sol` gives way to `gpt-6-sol` at high. Mid-loop the replacement takes over the earlier findings and validates only those, under `review` step 4; it is not a fresh review.
-- **Codex down** (every GPT model fails, `gpt-6-sol` included): review with Opus 5.5 at high in a fresh context, taking over the earlier findings the same way. Say in the report that the approval came from the author's family.
-- Fallbacks stay within Claude and Codex. Never reach for another provider or CLI.
-- **Claude down** (Sonnet and Opus both fail): `gpt-6.1-sol` at medium builds, and the reviewer is a fresh `gpt-6.1-sol` run at high.
+- **No fallback model.** A run that cannot start or dies on a provider error (capacity, usage or weekly limit, 429, 503) is not handed to another model or provider. Retry the same model once; if it fails again, stop that slice at a commit, record it in the tracker, and ask the user, or log it in `QUESTIONS.md` when unattended and keep working on slices that do not need it.
 - Say which model reviewed and which built whenever it is not the default.
 
 ## Prompt rules

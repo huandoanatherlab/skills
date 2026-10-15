@@ -9,7 +9,7 @@ One short file per repo; every section optional. It holds what the shared skills
 
 ## Roles
 - builder: claude claude-sonnet-5-5 medium
-- reviewer: codex gpt-6.1-sol high
+- reviewer: by tier (haiku-5-5 high simple, opus-5-5 medium, opus-5-5 high risky)
 
 ## Scratch
 - .scratch/

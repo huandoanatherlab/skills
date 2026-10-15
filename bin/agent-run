@@ -17,7 +17,8 @@
 # Machine overrides: AGENT_RUN_CLAUDE / AGENT_RUN_CODEX, or executables ~/.config/agent-run/{claude,codex}
 # (use them to wrap a CLI in a gateway).
 # Defaults (model/effort): claude builder claude-sonnet-5-5/medium, claude reviewer claude-opus-5-5/high,
-# codex builder gpt-6.1-sol/medium, codex reviewer gpt-6.1-sol/high. Override a model with
+# codex builder gpt-6.1-sol/medium, codex reviewer gpt-6.1-sol/high (codex only when the user names a GPT model).
+# Simple review targets: --model claude-haiku-5-5; medium targets: --effort medium. Override a model with
 # AGENT_RUN_<CLAUDE|CODEX>_<BUILDER|REVIEWER>_MODEL, or pass --model / --effort.
 # A reviewer whose first and last lines are not a verdict is asked once for one.
 # Exit code: the agent's exit code, or 3 when a reviewer's verdict is still missing.

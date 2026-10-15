@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Plan and build a multi-step code change: write an evidence-grounded plan, get it reviewed, then build it slice by slice with Claude builders and Codex reviewers; also pause, resume or report progress on such a build. Use whenever asked to implement, execute or "thực thi / triển khai" a change that spans several files or touches a migration, a contract or permissions, including when the request arrives mid-thread.
+description: Plan and build a multi-step code change: write an evidence-grounded plan, get it reviewed, then build it slice by slice with Claude builders and reviewers; also pause, resume or report progress on such a build. Use whenever asked to implement, execute or "thực thi / triển khai" a change that spans several files or touches a migration, a contract or permissions, including when the request arrives mid-thread.
 ---
 
 # Writing Plans
@@ -49,18 +49,18 @@ Requires a plan with Review Status `approved` and no open architecture decision.
 
 Choose a mode per slice:
 
-- **cross** (default): Sonnet 5.5 builder at medium (Opus 5.5 for a heavy slice, per `agent-run`) and Codex `gpt-6.1-sol` reviewer at high, each a separate run.
-- **inline**: tiny or tightly coupled slices sharing files. You build and commit; the reviewer is still a separate run, from the other family than you.
+- **cross** (default): Sonnet 5.5 builder at medium (Opus 5.5 for a heavy slice) and a reviewer by tier (Haiku 5.5, or Opus 5.5 at medium or high, per `agent-run` Models), each a separate run.
+- **inline**: tiny or tightly coupled slices sharing files. You build and commit; the reviewer is still a separate run, never you.
 
 The roles in `.agents/build.md` override these defaults; the user's current message overrides both.
 
-**Small build:** a plan of one or two `normal`-risk slices built inline skips the Finish whole-diff review and delivery audit; `TRACKER.md` keeps only its header and slice table, and the report goes in your final message. Never skipped: a plan with Review Status `approved` before the first code edit (a pending verify round is not approval), `triage-N.md`, and a reviewer from the other family.
+**Small build:** a plan of one or two `normal`-risk slices built inline skips the Finish whole-diff review and delivery audit; `TRACKER.md` keeps only its header and slice table, and the report goes in your final message. Never skipped: a plan with Review Status `approved` before the first code edit (a pending verify round is not approval), `triage-N.md`, and a separate reviewer run.
 
 ## Each slice
 
 1. **Build.** Write `build/runs/<slice>/prompt.md` ("Read briefs/COMMON.md first", slice ID, named tests, extra fences), then launch the builder with it (script form: `agent-run start build/runs/<slice> claude builder --cwd <worktree>`, in the background). Before any launch, check `TRACKER.md` and `task_status`/`agent-run status` so the slice has no live run already. Log launcher and id in `TRACKER.md`, and write the next slice's prompt while it runs.
 2. **Check the claim.** Read the whole diff and re-run the slice's named tests and focused gates. A builder's report is a claim, not evidence. If the builder exited without committing (usually a forbidden background job), resume it with the rule restated. A failure is pre-existing only if the same test fails on the base commit.
-3. **Review** with the `review` loop, code lens: confirm `git diff --stat <base>..HEAD` in the worktree is not empty, render `briefs/REVIEW.md` into `build/runs/<slice>-review/prompt.md`, launch the reviewer with it (script form: `agent-run start build/runs/<slice>-review codex reviewer --cwd <worktree>`), and follow `review` for triage and same-reviewer validation. You are the fix owner: send accepted fixes back to the same builder (the launcher's follow-up in `agent-run`).
+3. **Review** with the `review` loop, code lens: confirm `git diff --stat <base>..HEAD` in the worktree is not empty, render `briefs/REVIEW.md` into `build/runs/<slice>-review/prompt.md`, launch the reviewer with it (script form: `agent-run start build/runs/<slice>-review claude reviewer --cwd <worktree>, plus the tier's `--model`/`--effort``), and follow `review` for triage and same-reviewer validation. You are the fix owner: send accepted fixes back to the same builder (the launcher's follow-up in `agent-run`).
 4. **Live proof** at the slice's level ([references/project.md](references/project.md)), between builds, never while a builder edits a watched dev server.
 5. **Record** commits, round count, verdict and evidence in `TRACKER.md`. When the user is present, post one line (slice, verdict, what is next). Then launch the next slice at once; answering a question mid-run never ends the turn. A question of yours never blocks work that does not depend on it: ask in plain text or log it in `QUESTIONS.md` with your recommended default, keep processing finished runs and launching independent slices, and use a blocking question tool only when nothing else can move.
 
@@ -84,7 +84,7 @@ Run slices in parallel only when files, state and contracts do not overlap: one 
 1. **Whole-diff review** with `review`, code lens, by a fresh reviewer: dead code, duplicated helpers, oversized files, slice IDs in comments.
 2. **Gates** from `.agents/build.md`; classify each failure against the base commit.
 3. **Live check** of every `smoke`/`story`/`suite` slice end to end, evidence in `build/evidence/`.
-4. **Acceptance audit** with `review`, delivery lens, by a fresh `gpt-6.1-sol` reviewer; fix what it finds and repeat that slice's review.
+4. **Acceptance audit** with `review`, delivery lens, by a fresh Opus 5.5 reviewer at high; fix what it finds and repeat that slice's review.
 5. **Report** in `build/FINAL-REPORT.md`: commit range and deploy order, migration commands per environment, slices with models, verdicts, rejected findings with reasons, deviations, live results with evidence paths, failed or skipped gates, a short manual QA guide, open questions, delivery verdict. Never hide a failure behind "tests pass".
 6. **Ship** per `.agents/build.md` Git: commit any leftovers in logical groups, push and open a PR to the base branch with the report summary and evidence images, or merge if that is the project's flow. Without a Git section or prior authority, ask once.
 7. **Clean up** everything under Resources in `TRACKER.md`: stop dev servers, browsers, background waits and processes you started; cancel live T3 tasks; drop temporary databases and containers; remove merged worktrees and branches, build output and unused volumes; in `<scratch>/<topic>` keep `plan.md` and `build/FINAL-REPORT.md`. Before removing a worktree, end every process and agent session whose working directory is inside it; on `Directory not empty` or `Permission denied`, find and stop the holder instead of retrying the delete. Never touch other agents' worktrees. List anything kept in the report.
@@ -97,4 +97,4 @@ Run slices in parallel only when files, state and contracts do not overlap: one 
 
 ## Unattended
 
-When the user is away and said to continue: fix bugs, log clear-value design changes, cut machinery, and put everything else in `QUESTIONS.md` with your recommendation. A provider error (429, 503, capacity) is not a stop: replace the model or fall through per `agent-run`, and keep going. Check-ins are one line: what runs, which model, how long, where the evidence is. Report only failures and the end, not "still running". Before your context runs out, pause and hand off to a fresh session.
+When the user is away and said to continue: fix bugs, log clear-value design changes, cut machinery, and put everything else in `QUESTIONS.md` with your recommendation. A provider error (429, 503, capacity, usage limit) gets one retry on the same model; then that slice waits in `QUESTIONS.md` and you keep going with the others (`agent-run`, Pairing: no fallback model). Check-ins are one line: what runs, which model, how long, where the evidence is. Report only failures and the end, not "still running". Before your context runs out, pause and hand off to a fresh session.

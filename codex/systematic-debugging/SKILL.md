@@ -102,7 +102,7 @@ If verification fails, go back to localization with the new evidence. Do not lay
 
 - **Large fix** (changes ownership, contracts, persistence, or spans several modules): stop after diagnosis and plan it with `writing-plans`, using the root cause as evidence.
 - **After a Standard or Deep fix:** run `review` with the code lens on the diff.
-- **Second opinion:** after three rejected hypotheses in Deep mode, launch a model from the other family through `agent-run`. Give it the symptom, evidence and log, not your conclusions.
+- **Second opinion:** after three rejected hypotheses in Deep mode, launch a fresh Opus 5.5 run at high through `agent-run`. Give it the symptom, evidence and log, not your conclusions.
 - **Side work:** send lookups to Haiku and code mapping or long bisects to Sonnet at low effort, through `agent-run`.
 
 ## Special outcomes

@@ -90,7 +90,7 @@ A slice that changes UI needs at least `story`: every touched page opens, includ
 ## Review Status
 
 - Lens: `review` plan lens
-- Reviewer: <family/model>, approved its findings in round <N>
+- Reviewer: <model and effort>, approved its findings in round <N>
 - Fresh pass (risky plans only): `APPROVED` | not required
 - Residual unrelated issues: none | list
 - Status: approved | stopped-with-open-findings
