@@ -44,7 +44,7 @@ Requires a plan with Review Status `approved` and no open architecture decision.
 1. Show one table: plan, base branch and HEAD, worktree, dirty files, environment, roles with model, effort and launcher (flag any role in `.agents/build.md` that differs from the `agent-run` defaults and ask whether to keep it), slice order and parallel groups. Wait for "go" unless already given.
 2. `git fetch`, then re-check the plan's file and line references against `origin/<base>`.
 3. In `build/`, write `TRACKER.md`, `QUESTIONS.md`, `briefs/COMMON.md` and `briefs/REVIEW.md` from [references/templates.md](references/templates.md), filled with the project's gates and fences.
-4. Create one worktree per slice that runs in parallel (`git worktree add -b <branch> <path> origin/<base>`, next to the repo unless `.agents/build.md` says otherwise); sequential slices share one. Log every worktree, branch, database and long-running process you create under Resources in `TRACKER.md`.
+4. Create one worktree per slice that runs in parallel (`git worktree add -b <branch> <path> origin/<base>`, next to the repo unless `.agents/build.md` says otherwise); sequential slices share one. Log every worktree, branch, database, container, image tag prefix, build-output dir and long-running process you create under Resources in `TRACKER.md`.
 5. Start the environment the live checks need, if any.
 
 Choose a mode per slice:
@@ -68,7 +68,7 @@ A slice is done when its review loop is complete, its live proof passed, and its
 
 **Too big:** a builder run well past the plan's 90-minute target (about 2 hours), or a review with more than 5 P0-P2 findings, means the slice is too big. Stop it at a commit and split the rest into sub-slices with their own IDs in `TRACKER.md`, in parallel where files allow. Check a builder once at about 90 minutes (`task_status` or `agent-run status`) so this rule is applied while it still saves time.
 
-Run slices in parallel only when files, state and contracts do not overlap: one worktree each (and one database each when tests write data), at most 3 builders and 6 agent runs at once. At each milestone merge the slice branches in dependency order into the build branch, run the full gates on the merged HEAD before anything moves to the base branch, then remove the merged worktrees and branches and record it.
+Run slices in parallel only when files, state and contracts do not overlap: one worktree each (and one database each when tests write data), at most 3 builders and 6 agent runs at once. At each milestone merge the slice branches in dependency order into the build branch, run the full gates on the merged HEAD before anything moves to the base branch, then remove the merged worktrees and branches, their build output and the images you built for them, and record it.
 
 **When reality disagrees with the plan:** a small detail that keeps architecture and acceptance criteria goes in `TRACKER.md`. A change to ownership, contracts, persistence, permissions, migrations or user-visible scope stops the build: update the plan, re-run its review, then continue.
 
@@ -87,7 +87,7 @@ Run slices in parallel only when files, state and contracts do not overlap: one 
 4. **Acceptance audit** with `review`, delivery lens, by a fresh Opus 5.5 reviewer at high; fix what it finds and repeat that slice's review.
 5. **Report** in `build/FINAL-REPORT.md`: commit range and deploy order, migration commands per environment, slices with models, verdicts, rejected findings with reasons, deviations, live results with evidence paths, failed or skipped gates, a short manual QA guide, open questions, delivery verdict. Never hide a failure behind "tests pass".
 6. **Ship** per `.agents/build.md` Git: commit any leftovers in logical groups, push and open a PR to the base branch with the report summary and evidence images, or merge if that is the project's flow. Without a Git section or prior authority, ask once.
-7. **Clean up** everything under Resources in `TRACKER.md`: stop dev servers, browsers, background waits and processes you started; cancel live T3 tasks; drop temporary databases and containers; remove merged worktrees and branches, build output and unused volumes; in `<scratch>/<topic>` keep `plan.md` and `build/FINAL-REPORT.md`. Before removing a worktree, end every process and agent session whose working directory is inside it; on `Directory not empty` or `Permission denied`, find and stop the holder instead of retrying the delete. Never touch other agents' worktrees. List anything kept in the report.
+7. **Clean up** everything under Resources in `TRACKER.md`: stop dev servers, browsers, background waits and processes you started; cancel live T3 tasks; drop temporary databases, containers and the images you built (then `docker builder prune -f`); remove merged worktrees and branches, build output and unused volumes; in `<scratch>/<topic>` keep `plan.md` and `build/FINAL-REPORT.md`. Before removing a worktree, end every process and agent session whose working directory is inside it; on `Directory not empty` or `Permission denied`, find and stop the holder instead of retrying the delete. Never touch other agents' worktrees. List anything kept in the report.
 
 ## Pause, resume, status
 

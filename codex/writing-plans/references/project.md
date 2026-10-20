@@ -29,6 +29,7 @@ One short file per repo; every section optional. It holds what the shared skills
 - stack: <docker compose up -d db | none>; stop: <command>
 - recipes: <e.g. MIKRO_ORM_MIGRATIONS_SNAPSHOT=false for db:migrate, PGHOST=127.0.0.1>
 - seed logins: <where they live>
+- build output: <one shared dir per worktree or per repo on a data drive, e.g. CARGO_TARGET_DIR=<worktree>/target>; docker image tag prefix: <e.g. ad-<topic>->
 
 ## Fences
 - test database: <url, or how to create one per worktree>

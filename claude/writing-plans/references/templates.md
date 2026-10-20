@@ -16,6 +16,7 @@ You are the implementer for ONE slice of `<plan path>`.
 - **Fences:** <test database; databases, sessions and services you must not touch>. No dev servers, live browser checks or posts to real external services.
 - **Types and generated code:** no `any`, casts or coercions to silence errors; never hand-edit generated files, regenerate them.
 - **Gates before you finish:** `<gate commands>` plus your named tests, re-run until they show zero errors. Report done only then, or with a named blocker. A failure that also fails on the base commit is pre-existing: record it, do not fix it. Full-suite sweeps beyond these belong to the coordinator at merge.
+- **Build output:** `<shared dirs from .agents/build.md Environment, e.g. CARGO_TARGET_DIR=<worktree>/target>`. Never create a new build, cache or target dir under `%TEMP%`/`/tmp`; every run in this worktree reuses these.
 - **Never run a command in the background** (`&`, `run_in_background`) **or an interactive one** (password prompts, editors, watch modes). Your session ends when you stop replying and background results are lost. Split a command too long for one tool call by file, shard or filter. Credentials come from the fences.
 - **Report** in `<build>/runs/<slice>/report.md`: files changed and why, commit sha, gate and test results, deviations, `## Questions` (or "none"), what to verify live. Evidence files go in `<build>/runs/<slice>/`, never `/tmp`.
 ```
@@ -29,6 +30,7 @@ Review slice {{SLICE}} of `<plan path>` with the code lens: read `<absolute path
 - Implementer report (a claim; check it): `<build>/runs/{{SLICE}}/report.md`.
 - Acceptance: the slice's checklist and done criteria in the plan. Evidence already run: `<command: result>`. Known unrelated failures: `<list or none>`.
 - Project rules: `<AGENTS.md / CLAUDE.md>`. <one-line calibration from .agents/build.md>
+- Build output, if you must compile: `<same shared dirs as briefs/COMMON.md>`; never a new target or cache dir under `%TEMP%`/`/tmp`.
 
 Also check scope: nothing from other slices, nothing outside the plan. Review manually. Do not edit files or spawn subagents. Do not run tests that need a database, network, ports or file writes; judge the evidence given and state what you could not verify. Write plain sentences. Use only that P0-P3 scale. End with exactly one line: `APPROVED` or `CHANGES REQUIRED`.
 ```
