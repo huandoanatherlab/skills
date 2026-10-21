@@ -28,7 +28,7 @@ proposals/                          daily retro proposals
 
 ```
 writing-specs (optional)
-writing-plans ─review(plan)→ one plan ─────→ lane-build (solo, this thread)
+writing-plans ─review(plan)→ one plan ─────→ lane-build (solo, new thread on its worktree)
                            └ master plan ─→ orchestrate (this thread = master)
                                               ├─ lane thread A: lane-build ─ builder / reviewer sub-agents
                                               ├─ lane thread B: lane-build ─ …
