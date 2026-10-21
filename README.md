@@ -21,7 +21,6 @@ New T3 threads, and the sub-agents they launch, then list the skills as `ath:<na
 claude/.claude-plugin/plugin.json   plugin manifest (name: ath)
 claude/skills/<name>/SKILL.md       the skills
 bin/agent-run                       fallback launcher when T3 cannot run a model
-proposals/                          daily retro proposals
 ```
 
 ## Flow
