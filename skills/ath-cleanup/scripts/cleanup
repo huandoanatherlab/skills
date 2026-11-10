@@ -1,0 +1,173 @@
+#!/usr/bin/env bash
+# cleanup: find and remove what a build left behind, one exact item at a time.
+# Never globs over shared roots, never pkill -f, never touches the main checkout.
+#
+#   cleanup scan [--topic T] [--into BRANCH]   list leftovers (read-only)
+#   cleanup procs PATH                         list processes whose cwd is inside PATH
+#   cleanup worktree PATH [--kill-holders] [--force] [--self]
+#                                                  remove one worktree (and its .tmp/); --self: the
+#                                                  caller's own worktree, run as its last command
+#   cleanup branch NAME --into BRANCH [--remote] [--force]
+#                                                  delete one branch merged into BRANCH (and origin's)
+#   cleanup container NAME                     stop and remove one docker container
+#   cleanup markers [PATH]                     list DEBUG(ath) lines left in the code
+#
+# Global: --dry-run prints what would run. Bash 3.2 compatible (macOS).
+set -u
+
+DRY=
+ARGS=()
+for a in "$@"; do
+  if [ "$a" = "--dry-run" ]; then DRY=1; else ARGS+=("$a"); fi
+done
+set -- "${ARGS[@]+"${ARGS[@]}"}"
+
+run() { if [ -n "$DRY" ]; then echo "would run: $*"; else "$@"; fi; }
+die() { echo "cleanup: $*" >&2; exit 1; }
+
+git rev-parse --git-dir >/dev/null 2>&1 || die "not in a git repository"
+MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+
+# Ancestors of this process (the agent's own shell and Claude session) and this script's own
+# process group (its pipes and subshells): never listed, never killed.
+MYPGID=$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')
+ANCESTORS=" $$ "
+p=$$
+while [ -n "$p" ] && [ "$p" != "1" ] && [ "$p" != "0" ]; do
+  p=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+  [ -n "$p" ] && ANCESTORS="$ANCESTORS$p "
+done
+
+# procs_in PATH -> "pid<TAB>command" for processes whose cwd is PATH or below it.
+procs_in() {
+  target=$(cd "$1" 2>/dev/null && pwd -P) || return 0
+  command -v lsof >/dev/null 2>&1 || { echo "(lsof unavailable: process scan skipped)" >&2; return 0; }
+  (cd / && lsof -d cwd -Fpn 2>/dev/null) | awk -v t="$target" '
+    /^p/ { pid = substr($0, 2) }
+    /^n/ { path = substr($0, 2); if (path == t || index(path, t "/") == 1) print pid }
+  ' | sort -u | while read -r pid; do
+    case "$ANCESTORS" in *" $pid "*) continue ;; esac
+    [ -n "$MYPGID" ] && [ "$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')" = "$MYPGID" ] && continue
+    kill -0 "$pid" 2>/dev/null || continue
+    printf '%s\t%s\n' "$pid" "$(ps -o command= -p "$pid" 2>/dev/null | cut -c1-120)"
+  done
+}
+
+is_merged() { # is_merged BRANCH INTO
+  git merge-base --is-ancestor "$1" "$2" 2>/dev/null
+}
+
+cmd=${1:-}; shift || true
+case "$cmd" in
+  scan)
+    TOPIC= INTO=HEAD
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --topic) TOPIC=$2; shift 2 ;;
+        --into) INTO=$2; shift 2 ;;
+        *) die "scan: unknown argument $1" ;;
+      esac
+    done
+    echo "## Worktrees (main checkout: $MAIN)"
+    git worktree list --porcelain | awk '/^worktree /{w=substr($0,10)} /^branch /{print w "\t" substr($0,19)} /^detached/{print w "\t(detached)"}' |
+    while IFS="$(printf '\t')" read -r wt br; do
+      [ "$wt" = "$MAIN" ] && continue
+      merged=no; [ "$br" != "(detached)" ] && is_merged "$br" "$INTO" && merged=yes
+      dirty=$(git -C "$wt" status --porcelain 2>/dev/null | grep -v '^?? .tmp/' | head -1)
+      [ -n "$dirty" ] && dirty=yes || dirty=no
+      n=$(procs_in "$wt" | wc -l | tr -d ' ')
+      printf '%s\tbranch=%s merged=%s dirty=%s processes=%s\n' "$wt" "$br" "$merged" "$dirty" "$n"
+    done
+    echo "## Local branches merged into $INTO"
+    git for-each-ref --format='%(refname:short)' refs/heads | while read -r br; do
+      case "$br" in main|master|develop|"$(git branch --show-current)") continue ;; esac
+      if [ -n "$TOPIC" ]; then case "$br" in *"$TOPIC"*|t3/*|worktree-*) ;; *) continue ;; esac; fi
+      is_merged "$br" "$INTO" && echo "$br"
+    done
+    echo "## Processes inside worktrees"
+    git worktree list --porcelain | awk '/^worktree /{print substr($0,10)}' | while read -r wt; do
+      [ "$wt" = "$MAIN" ] && continue
+      procs_in "$wt" | sed "s|^|$wt\t|"
+    done
+    if [ -n "$TOPIC" ] && command -v docker >/dev/null 2>&1; then
+      echo "## Docker containers matching '$TOPIC'"
+      docker ps -a --format '{{.Names}}\t{{.Status}}' 2>/dev/null | grep -F -- "$TOPIC" || true
+    fi
+    echo "## DEBUG(ath) markers in $(pwd)"
+    git grep -nF 'DEBUG(ath)' -- . 2>/dev/null || echo "none"
+    ;;
+
+  procs)
+    [ $# -ge 1 ] || die "procs PATH"
+    procs_in "$1"
+    ;;
+
+  worktree)
+    [ $# -ge 1 ] || die "worktree PATH [--kill-holders] [--force] [--self]"
+    WT=$1; shift; KILL= FORCE= SELF=
+    for a in "$@"; do case "$a" in --kill-holders) KILL=1 ;; --force) FORCE=1 ;; --self) SELF=1 ;; *) die "unknown $a" ;; esac; done
+    WT=$(cd "$WT" 2>/dev/null && pwd -P) || { echo "already gone: $1"; git -C "$MAIN" worktree prune; exit 0; }
+    [ "$WT" = "$(cd "$MAIN" && pwd -P)" ] && die "refusing to remove the main checkout"
+    git -C "$MAIN" worktree list --porcelain | grep -qx "worktree $WT" || die "$WT is not a worktree of this repo"
+    HERE=$(pwd -P)
+    case "$HERE/" in "$WT"/*) [ -n "$SELF" ] || die "you are inside $WT; pass --self (and run it as your last command) or run from elsewhere" ;; esac
+    holders=$(procs_in "$WT")
+    if [ -n "$holders" ] && [ -n "$SELF" ]; then
+      echo "still running inside (left alone; they belong to this session or end with it):"; echo "$holders"
+    elif [ -n "$holders" ]; then
+      echo "processes holding $WT:"; echo "$holders"
+      [ -n "$KILL" ] || die "stop them first, or pass --kill-holders"
+      echo "$holders" | cut -f1 | while read -r pid; do run kill "$pid"; done
+      [ -n "$DRY" ] || sleep 3
+      echo "$holders" | cut -f1 | while read -r pid; do kill -0 "$pid" 2>/dev/null && run kill -9 "$pid"; done
+    fi
+    [ -d "$WT/.tmp" ] && run rm -rf "$WT/.tmp"
+    left=$(git -C "$WT" status --porcelain 2>/dev/null)
+    if [ -n "$left" ] && [ -z "$FORCE" ]; then
+      echo "uncommitted changes in $WT:"; echo "$left" | head -20
+      die "commit or discard them, or pass --force"
+    fi
+    if [ -n "$FORCE" ]; then run git -C "$MAIN" worktree remove --force "$WT" || die "git worktree remove failed"
+    else run git -C "$MAIN" worktree remove "$WT" || die "git worktree remove failed"; fi
+    run git -C "$MAIN" worktree prune
+    [ -n "$DRY" ] || echo "removed worktree $WT"
+    ;;
+
+  branch)
+    [ $# -ge 1 ] || die "branch NAME --into BRANCH [--remote] [--force]"
+    BR=$1; shift; REMOTE= FORCE= INTO=
+    while [ $# -gt 0 ]; do
+      case "$1" in --remote) REMOTE=1; shift ;; --force) FORCE=1; shift ;; --into) INTO=$2; shift 2 ;; *) die "unknown $1" ;; esac
+    done
+    case "$BR" in main|master|develop) die "refusing to delete $BR" ;; esac
+    [ "$BR" = "$(git branch --show-current)" ] && die "$BR is checked out here"
+    if git show-ref --verify --quiet "refs/heads/$BR"; then
+      if [ -z "$FORCE" ]; then
+        [ -n "$INTO" ] || die "pass --into BRANCH (where $BR was merged), or --force after confirming the merge (e.g. gh pr view)"
+        is_merged "$BR" "$INTO" || die "$BR is not merged into $INTO; pass --force only if the merge is confirmed another way"
+      fi
+      run git -C "$MAIN" branch -D "$BR" || die "could not delete $BR (checked out in a worktree?)"
+    else
+      echo "no local branch $BR"
+    fi
+    if [ -n "$REMOTE" ] && git ls-remote --exit-code --heads origin "$BR" >/dev/null 2>&1; then
+      run git -C "$MAIN" push origin --delete "$BR"
+    fi
+    ;;
+
+  container)
+    [ $# -ge 1 ] || die "container NAME"
+    command -v docker >/dev/null 2>&1 || die "docker not installed"
+    docker inspect "$1" >/dev/null 2>&1 || { echo "no container $1"; exit 0; }
+    run docker rm -f "$1"
+    ;;
+
+  markers)
+    git -C "${1:-.}" grep -nF 'DEBUG(ath)' 2>/dev/null || echo "none"
+    ;;
+
+  *)
+    sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+    [ -z "$cmd" ] || exit 1
+    ;;
+esac

@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+// status: print the state of the plans in docs/plans/*/ of the current worktree.
+//   status            full table for every plan that is not archived
+//   status --brief    active plans of the current branch only; silent if none
+//   status FILE...    only these progress files
+const fs = require("fs");
+const path = require("path");
+const { execSync } = require("child_process");
+
+const args = process.argv.slice(2);
+const brief = args.includes("--brief");
+const files = args.filter((a) => !a.startsWith("--"));
+
+let root;
+try {
+  root = execSync("git rev-parse --show-toplevel", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+} catch {
+  if (!brief) console.error("status: not in a git repository");
+  process.exit(brief ? 0 : 1);
+}
+
+let current = "";
+try {
+  current = execSync("git branch --show-current", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+} catch {}
+
+function findProgress() {
+  const dir = path.join(root, "docs", "plans");
+  const out = [];
+  if (!fs.existsSync(dir)) return out;
+  for (const topic of fs.readdirSync(dir)) {
+    if (topic === "archive") continue;
+    const td = path.join(dir, topic);
+    if (!fs.statSync(td).isDirectory()) continue;
+    for (const f of fs.readdirSync(td)) if (f.endsWith(".progress.json")) out.push(path.join(td, f));
+  }
+  return out.sort();
+}
+
+const ACTIVE = new Set(["approved", "building", "paused", "blocked"]);
+const list = files.length ? files : findProgress();
+let printed = 0;
+
+for (const file of list) {
+  let p;
+  try {
+    p = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (e) {
+    if (!brief) console.log(`${file}: unreadable (${e.message})`);
+    continue;
+  }
+  const rel = path.relative(root, file);
+  const state = p.state || "?";
+  if (brief && !ACTIVE.has(state)) continue;
+  if (brief && p.branch && current && p.branch !== current) continue;
+  printed++;
+
+  if (p.plans) {
+    // index (home) progress
+    const merged = p.plans.filter((x) => x.state === "merged").length;
+    console.log(`${rel}  state=${state}  plans merged ${merged}/${p.plans.length}  branch=${p.branch || "?"}`);
+    for (const x of p.plans) {
+      console.log(`  ${x.file}  ${x.state || "pending"}${x.thread ? `  thread=${x.thread}` : ""}${x.branch ? `  ${x.branch}` : ""}`);
+    }
+  } else {
+    const slices = p.slices || [];
+    const done = slices.filter((s) => s.status === "done").length;
+    const pct = slices.length ? Math.round((100 * done) / slices.length) : 0;
+    console.log(`${rel}  state=${state}  ${done}/${slices.length} slices (${pct}%)  branch=${p.branch || "?"}`);
+    if (brief) {
+      const open = slices.filter((s) => s.status !== "done").map((s) => `${s.id}:${s.status}`);
+      if (open.length) console.log(`  open: ${open.join(" ")}`);
+    } else {
+      for (const s of slices) {
+        const checks = s.checks || [];
+        const passed = checks.filter((c) => c.pass).length;
+        console.log(
+          `  ${s.id.padEnd(5)} ${String(s.group || "").padEnd(2)} ${(s.status || "pending").padEnd(9)} rounds=${s.rounds || 0}` +
+            `  checks ${passed}/${checks.length}${s.note ? `  ${s.note}` : ""}`
+        );
+      }
+    }
+  }
+  const qs = (p.questions || []).filter((q) => !q.answered);
+  if (qs.length) console.log(`  questions: ${qs.map((q, i) => `${i + 1}) ${q.q}${q.default ? ` [default: ${q.default}]` : ""}`).join("  ")}`);
+  const last = (p.log || []).slice(-1)[0];
+  if (last) console.log(`  last: ${last}`);
+  if (brief) console.log(`  resume: ath-execute with ${rel.replace(".progress.json", ".md")}`);
+}
+
+if (!printed && !brief) console.log("no plans in docs/plans/");

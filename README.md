@@ -1,70 +1,78 @@
 # Skills
 
-Plan, build, review and debug skills for T3 Code. They load only in T3: one Claude Code plugin (`ath`) that T3's Claude provider loads with `--plugin-dir`, so Claude Desktop, Cowork and plain `claude` sessions never see them. Every builder, reviewer and helper runs as a T3 sub-agent on a Claude model; a GPT model runs only when the user names one.
+Personal skills for planning, building, reviewing, debugging, documenting and cleaning up code changes. They are plain [Agent Skills](https://agentskills.io) folders, so they work in Claude Code (CLI, T3 Code) and in agents that read `~/.agents/skills`, such as Codex. T3-only extras (thread titles, parallel plan threads, PR watch) switch on when T3's tools are present.
 
 ## Install
 
 ```bash
 ./install.sh --dry-run
-./install.sh
+./install.sh            # --copy where symlinks are unavailable (Windows without Developer Mode)
 ```
 
-`install.sh` removes links an older install left in `~/.claude/skills` and `~/.codex/skills` (backups in `~/.skills-backup/<time>/`), links `bin/agent-run` into `~/.local/bin`, and prints the one T3 setting to make:
+The script:
+- links each `skills/ath-*` folder into `~/.claude/skills/` and `~/.agents/skills/`;
+- links the three roles into `~/.claude/agents/` as `ath-builder`, `ath-reviewer` and `ath-scout`;
+- removes links that older installs left behind.
 
-Settings → Providers → Claude → Launch arguments: `--plugin-dir <repo>\claude`
+Edits in this repo are live, except where the script had to copy; then re-run it after each change.
 
-New T3 threads, and the sub-agents they launch, then list the skills as `ath:<name>`.
+After installing:
+- If T3 still has `--plugin-dir …/claude` under Launch arguments, remove it.
+- Set `"worktree": { "baseRef": "head" }` in `~/.claude/settings.json`. Parallel builders need it.
+
+## How work flows
+
+```
+request ─ small? ── just do it, run checks, report
+        └ ath-plan ── branch feat/<topic> (T3: this thread moves into its worktree)
+                      docs/plans/<topic>/plan.md + plan.progress.json, reviewed, "chốt"
+          ath-execute (same session)
+            per slice: builder → coordinator re-runs checks → reviewer → fix rounds (≤2) → done
+            finish: full checks → final review → docs sync → cleanup → archive plan → one PR
+            PR merged → cleanup of the worktree and branch
+```
+
+- **One session per plan.** The session you plan in is the one that builds, so it never hands off for context. The progress file holds the state, and auto-compaction keeps the session going.
+- **Roles, not ad-hoc prompts.** `ath-builder`, `ath-reviewer` and `ath-scout` each have their own instructions, model and tools.
+  - In Claude Code they are native agents, and fix and verify rounds continue the same agent with `SendMessage`.
+  - Elsewhere a sub-agent is told to read the role file. See `skills/ath-execute/roles/README.md`.
+- **Big topics:** `00-index.md` plus several plan files, all merged into `feat/<topic>`, with one PR.
+  - In T3, each plan runs in its own thread and worktree, in parallel.
+  - Elsewhere they run one after another.
 
 ## Layout
 
 ```
-claude/.claude-plugin/plugin.json   plugin manifest (name: ath)
-claude/skills/<name>/SKILL.md       the skills
-bin/agent-run                       fallback launcher when T3 cannot run a model
-```
-
-## Flow
-
-```
-writing-specs (optional)
-writing-plans ─review(plan)→ one plan ─────→ lane-build (solo, new thread on its worktree)
-                           └ master plan ─→ orchestrate (this thread = master)
-                                              ├─ lane thread A: lane-build ─ builder / reviewer sub-agents
-                                              ├─ lane thread B: lane-build ─ …
-                                              └─ merge, gates, whole-build review(code, delivery), cleanup
+skills/ath-plan/       SKILL.md, references/plan-format.md
+skills/ath-execute/    SKILL.md, references/home.md, roles/{builder,reviewer,scout}.md, scripts/status
+skills/ath-review/     SKILL.md
+skills/ath-debug/      SKILL.md, references/
+skills/ath-docs/       SKILL.md, references/templates.md
+skills/ath-cleanup/    SKILL.md, scripts/cleanup
 ```
 
 | Skill | Job |
 | --- | --- |
-| `writing-plans` | Evidence-grounded plan, or a master plan split into lane plans; plan review; hands off to `lane-build` or `orchestrate` |
-| `orchestrate` | Master thread: launches one T3 lane thread per lane plan (own worktree, ports, DB), global run budget, merges and gates, master fix slices, whole-build finish, lane close and cleanup |
-| `lane-build` | Coordinator of one plan, as a lane or solo: builder and reviewer sub-agents per slice, live proof, finish, pause, resume, status from `TRACKER.md` |
-| `review` | Review loop with triage and same-reviewer approval; lenses: plan, code, delivery |
-| `agent-run` | Models by job and how to launch a sub-agent with T3 `delegate_task` |
-| `writing-specs` | Lasting product (PRD) and design (TDD) docs in `docs/` |
-| `systematic-debugging` | Evidence-driven debugging in Quick, Standard or Deep mode; hands large fixes to `writing-plans` and finished fixes to `review` |
+| `ath-plan` | Decides whether a plan is needed; sets up the main branch (and worktree in T3); writes a grounded plan with checkable acceptance; runs the plan review; waits for go |
+| `ath-execute` | Slice loop with circuit breakers, final review, docs sync, cleanup, PR. Also status, pause and resume, and acting as home for several plans |
+| `ath-review` | Ad-hoc review of a plan, diff or PR by the reviewer role, with triage and an optional fix loop |
+| `ath-debug` | Evidence-first debugging: failing test first, a hypothesis log, breakers, production kept read-only |
+| `ath-docs` | Keeps `docs/` in one standard shape: init, migrate an old project, sync after a build, ADRs |
+| `ath-cleanup` | Exact, verified removal of worktrees, branches, processes, containers, threads, schedules and debug lines |
 
-## Models
+## Models (Claude Code)
 
-| Work | Model | Effort |
-| --- | --- | --- |
-| Lookups, reading or editing docs | `claude-haiku-5-5` | unset, no thinking |
-| Code mapping | `claude-sonnet-5-5` | low |
-| Builder, small fixes | `claude-sonnet-5-5` | medium |
-| Heavy builder (cross-package, tricky logic, Sonnet failed) | `claude-opus-5-5` | medium |
-| Reviewer, simple target (docs, config, short plan, small normal-risk diff) | `claude-haiku-5-5` | high, read-only |
-| Reviewer, medium target (normal code slice, feature plan) | `claude-opus-5-5` | medium, read-only |
-| Reviewer, complex target (risky slice, milestone plan, whole-diff, delivery audit) | `claude-opus-5-5` | high, read-only |
-| Lane orchestrator thread (set by `orchestrate`) | `claude-opus-5-5` | medium |
+| Role | Model | Effort | Tools |
+| --- | --- | --- | --- |
+| `ath-builder` | `claude-sonnet-5-5` | medium | all, `maxTurns` 150 |
+| `ath-reviewer` | `claude-opus-5-5` | medium | read-only (no Edit, Write, Agent) |
+| `ath-scout` | `claude-haiku-5-5` | default | Read, Grep, Glob, Bash |
+| coordinator | the session's own model | | |
 
-Design, review triage and short live checks stay with the coordinator. The reviewer is always a separate run in a fresh context. There is no fallback model: a run that fails on capacity or a usage limit is retried once on the same model, then waits for the user. The full table is in `agent-run`.
-
-## Launching a run
-
-Every run is a T3 `delegate_task` child: Claude models on the `claudeAgent` instance (option `effort`), GPT models on the `codex` instance (option `reasoningEffort`). The codex instance runs whatever binary T3's provider settings name, which on a gateway machine is the gateway's launcher; provider health comes from `orchestrator_capabilities`.
-
-`bin/agent-run` is the fallback when T3 cannot run a model: it runs Claude or Codex as builder or reviewer, resumable by session. Wrap a CLI for one machine with an executable `~/.config/agent-run/codex` or `~/.config/agent-run/claude`.
+Other agents use whatever models their harness picks for sub-agents.
 
 ## Per project
 
-Each repo may add `.agents/build.md` (roles, gates, fences, ports, how to run the app). See `lane-build/references/project.md`. Without it, `lane-build` reads `AGENTS.md`/`CLAUDE.md`, discovers the rest, and proposes the file.
+There is no per-repo config file. The skills read the repo's `AGENTS.md`/`CLAUDE.md` and its `docs/`.
+- The checks come from `docs/repo-structure.md` → `## Checks`, or else from CI and the package scripts.
+- Lasting rules go into `AGENTS.md`.
